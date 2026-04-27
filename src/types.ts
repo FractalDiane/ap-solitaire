@@ -15,7 +15,7 @@ export enum CardLocation {
 	Waste,
 }
 
-export type CardMouseHandler = (mousePos: Vector2, cardRect: DOMRect, cardId: string, card: Card, location: CardLocation, index: number) => void;
+export type CardMouseHandler = (mousePos: Vector2, cardRect: DOMRect, cardId: string, cards: Card[], location: CardLocation, index: number, indexInStack: number) => void;
 export interface DragData {
 	draggedCard: string,
 	dragOffset: Vector2,
@@ -23,6 +23,13 @@ export interface DragData {
 
 	onMouseDown: CardMouseHandler,
 	onMouseUp: CardMouseHandler,
+}
+
+export interface GameState {
+	tableau: Card[][],
+	foundations: Card[][],
+	stock: Card[],
+	waste: Card[],
 }
 
 export interface DropZone {

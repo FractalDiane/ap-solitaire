@@ -13,7 +13,7 @@ interface FoundationProps {
 
 export default function Foundation(props: FoundationProps) {
 	return <div className="foundation drop-zone" drop-location={CardLocation.Foundation} drop-index={props.index}>
-		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card}
+		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 			location={CardLocation.Foundation} indexInLocation={props.index}
 			dragData={props.dragData}
 			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1} />)}

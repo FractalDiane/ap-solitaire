@@ -14,7 +14,7 @@ interface DepotProps {
 
 export default function Depot(props: DepotProps) {
 	return <div className="depot drop-zone" drop-location={CardLocation.Depot} drop-index={props.index}>
-		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card}
+		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 		location={CardLocation.Depot} indexInLocation={props.index}
 		dragData={props.dragData}
 		staggered={true} stackIndex={index} isTopInStack={index === props.cards.length - 1} />)}
