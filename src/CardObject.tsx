@@ -2,7 +2,7 @@ import { Card, CardLocation, cardValues, DragData, Suit } from "./types";
 import { useMemo, useRef } from "react";
 
 import "./CardObject.css";
-import { getCardUid } from "./utils";
+import { getCardUid, getRandomCardColor } from "./utils";
 
 interface CardObjectProps {
 	card: Card,
@@ -15,11 +15,22 @@ interface CardObjectProps {
 	indexInLocation: number,
 
 	dragData: DragData,
+
+	rainbowTrapActive: boolean,
 }
 
 export default function CardObject(props: CardObjectProps) {
 	const id = useMemo(() => getCardUid(props.card), [props.card]);
-	const isRed = useMemo(() => props.card.suit == Suit.Hearts || props.card.suit == Suit.Diamonds, [props.card]);
+	const color = useMemo(() => {
+		if (props.rainbowTrapActive) {
+			return getRandomCardColor(id);
+		} else if (props.card.suit == Suit.Hearts || props.card.suit == Suit.Diamonds) {
+			return "red";
+		} else {
+			return "black";
+		}
+	}, [id, props.card, props.rainbowTrapActive]);
+
 	const isBeingDragged = useMemo(
 		() => props.dragData.draggedCard === id || props.allCardsInStack.slice(0, props.stackIndex).some(card => props.dragData.draggedCard === getCardUid(card)),
 		[id, props.dragData.draggedCard, props.allCardsInStack, props.stackIndex],
@@ -37,7 +48,7 @@ export default function CardObject(props: CardObjectProps) {
 		onMouseUp={(e) => {if (isBeingDragged) props.dragData.onMouseUp({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 			>
 			{props.card.isFaceUp && <>
-				<div className={`text ${isRed ? "red" : ""}`}>{cardValues[props.card.value]}</div>
+				<div className={`text`} style={{color: color}}>{cardValues[props.card.value]}</div>
 			</>}
 		</div>;
 }

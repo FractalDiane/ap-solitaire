@@ -1,0 +1,11 @@
+#connect-panel {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 48px;
+
+	flex-grow: 2;
+}
+
+#connect-panel-parent {
+	display: flex;
+}

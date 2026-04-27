@@ -7,10 +7,12 @@ interface TableauProps {
 	depots: Card[][],
 	
 	dragData: DragData,
+
+	rainbowTrapActive: boolean,
 }
 
 export default function Tableau(props: TableauProps) {
 	return <div className="tableau">
-		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} />)}
+		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} rainbowTrapActive={props.rainbowTrapActive} />)}
 	</div>;
 }

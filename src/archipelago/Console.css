@@ -1,0 +1,21 @@
+#console {
+	font-family: sans-serif;
+	max-height: 500px;
+	overflow-y: scroll;
+
+	.text-player-you {
+		color: #ff87d7;
+	}
+
+	.text-player-them {
+		color: #5fafff;
+	}
+
+	.text-item-progression {
+		color: #ffc500;
+	}
+
+	.text-location {
+		color: #00c51b;
+	}
+}

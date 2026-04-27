@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, rectDistanceSquared } from "./utils";
-import { Card, CardLocation, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
+import { Card, CardLocation, ConnectionInfo, ConnectionStatus, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
-
-import "./App.css";
 import Waste from "./piles/Waste";
 import Stock from "./piles/Stock";
+import ConnectPanel from "./archipelago/ConnectPanel";
+
+import "./App.css";
+import Console from "./archipelago/Console";
 
 function App() {
 	const [gameState, setGameState] = useState(generateNewGame);
@@ -14,6 +17,136 @@ function App() {
 	const [draggedCard, setDraggedCard] = useState("");
 	const [draggedCardOffset, setDraggedCardOffset] = useState<Vector2>({x: 0, y: 0});
 	const [draggedCardStartPos, setDraggedCardStartPos] = useState<Vector2>({x: 0, y: 0});
+
+	const websocket = useRef<WebSocket | null>(null);
+	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
+	const dataPackage = useRef<object>({});
+	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
+	const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
+
+	const [unlockedCards, setUnlockedCards] = useState(new Set<string>());
+	const [mirrorTrapActive, setMirrorTrapActive] = useState(false);
+	const [rainbowTrapActive, setRainbowTrapActive] = useState(true);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+	function printToConsole(msg: string) {
+		setConsoleMessages(oldConsole => [...oldConsole, msg]);
+	}
+
+	function onClickConnect(isDisconnect: boolean, info: ConnectionInfo) {
+		if (!isDisconnect) {
+			try {
+				const socket = new WebSocket(`wss://${info.address}`);
+				socket.onopen = onWebsocketConnect;
+				socket.onmessage = onWebsocketMessage;
+				socket.onerror = onWebsocketError;
+				socket.onclose = onWebsocketDisconnect;
+
+				websocket.current = socket;
+				connectInfo.current = info;
+				setConnectionStatus(ConnectionStatus.Connecting);
+			} catch (e) {
+				console.error(e);
+			}
+		} else {
+			setConnectionStatus(ConnectionStatus.Disconnecting);
+			websocket.current?.close();
+		}
+	}
+
+	function sendCommand(command: object) {
+		console.log(websocket);
+		websocket.current?.send(JSON.stringify([command]));
+	}
+
+	function onWebsocketConnect() {
+		sendCommand({
+			cmd: "Connect",
+			tags: ["DeathLink"],
+			game: null,
+			password: connectInfo.current.password,
+			name: connectInfo.current.slot,
+			uuid: uuidv4(),
+			version: {class: "Version", major: 0, minor: 7, build: 0},
+			items_handling: 0b111,
+			slot_data: true,
+		});
+	}
+
+	function onWebsocketMessage(msg: MessageEvent) {
+		const data = JSON.parse(msg.data);
+
+		const args = data[0] ?? {};
+		const cmd = args.cmd ?? "";
+
+		switch (cmd) {
+			case "RoomInfo": {
+				const localChecksums = JSON.parse(localStorage.getItem("dataChecksums") ?? "{}");
+				const staleGames = [];
+				for (const [game, checksum] of Object.entries(args.datapackage_checksums)) {
+					if (localChecksums[game] !== checksum) {
+						staleGames.push(game);
+					}
+				}
+
+				if (staleGames.length > 0) {
+					sendCommand({
+						cmd: "GetDataPackage",
+						//games: staleGames,
+					});
+
+					localStorage.setItem("dataChecksums", JSON.stringify(args.datapackage_checksums));
+				} else {
+					dataPackage.current = JSON.parse(localStorage.getItem("data") ?? "{}");
+				}
+			} break;
+
+			case "DataPackage": {
+				localStorage.setItem("data", msg.data);
+				dataPackage.current = args.data.games;
+			} break;
+
+			case "Connected": {
+				setConnectionStatus(ConnectionStatus.Connected);
+				console.log(args);
+			} break;
+
+			case "ConnectionRefused": {
+				setConnectionStatus(ConnectionStatus.Disconnected);
+			} break;
+
+			case "PrintJSON": {
+				let result = "";
+				for (const part of args.data) {
+					switch (part.type ?? "text") {
+						case "text": {
+							result += part.text;
+						} break;
+					}
+				}
+
+				printToConsole(result);
+			} break;
+			
+			default: {
+				console.log(data);
+			} break;
+		}
+	}
+
+	function onWebsocketError(event: Event) {
+		console.error(event);
+	}
+
+	function onWebsocketDisconnect(event: CloseEvent) {
+		if (event.code === 1015) {
+			printToConsole(`Couldn't connect to Archipelago server at ${connectInfo.current.address}.`);
+		}
+
+		setConnectionStatus(ConnectionStatus.Disconnected);
+		console.log(event);
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,6 +170,18 @@ function App() {
 			foundations: [[], [], [], []],
 			waste: [],
 		};
+	}
+
+	function saveGame() {
+		const saveData = JSON.stringify(gameState);
+		localStorage.setItem("save", saveData);
+	}
+
+	function loadGame() {
+		const saveData = localStorage.getItem("save");
+		if (saveData !== null) {
+			setGameState(JSON.parse(saveData));
+		}
 	}
 
 	function drawCard() {
@@ -172,19 +317,27 @@ function App() {
 			onMouseDown: onCardMouseDown,
 			onMouseUp: onCardMouseUp,
 		};
-	}, [draggedCard, draggedCardOffset, draggedCardStartPos])
+	}, [draggedCard, draggedCardOffset, draggedCardStartPos]);
 
 	return <div id="actual-root" onMouseMove={(e) => {
-		if (draggedCard.length > 0) {
-			setDraggedCardOffset({x: e.clientX, y: e.clientY});
-		}
-	}}>
-		<div className="foundations-container">
-			<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} />
-			<Waste cards={gameState.waste} dragData={dragData} />
-			{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} />)}
+			if (draggedCard.length > 0) {
+				setDraggedCardOffset({x: e.clientX, y: mirrorTrapActive ? window.innerHeight - e.clientY : e.clientY});
+			}
+		}}>
+		<div id="main-screen">
+			<div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
+				<div className="foundations-container">
+					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} rainbowTrapActive={rainbowTrapActive} />
+					<Waste cards={gameState.waste} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />
+					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />)}
+				</div>
+				<Tableau depots={gameState.tableau} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />
+			</div>
+			<div id="archipelago-info">
+				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} />
+				<Console messages={consoleMessages} />
+			</div>
 		</div>
-		<Tableau depots={gameState.tableau} dragData={dragData} />
 	</div>;
 }
 

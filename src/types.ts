@@ -87,3 +87,18 @@ export const suitImages = [
 	imageClub,
 	imageSpade,
 ];
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export interface ConnectionInfo {
+	address: string,
+	slot: string,
+	password: string,
+}
+
+export enum ConnectionStatus {
+	Disconnected,
+	Disconnecting,
+	Connecting,
+	Connected,
+}

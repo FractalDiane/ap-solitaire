@@ -1,5 +1,7 @@
 import { Suit, Vector2, type Card } from "./types";
 
+import { create } from "random-seed";
+
 export function shuffleArray<T>(array: T[]) {
 	for (let i = array.length - 1; i > 0; --i) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -24,6 +26,14 @@ export function rectDistanceSquared(a: DOMRect, b: DOMRect): number {
 
 export function getCardUid(card: Card): string {
 	return `${Suit[card.suit].substring(0, 1)}${card.value}`;
+}
+
+export function getRandomCardColor(cardId: string): string {
+	const rand = create(cardId);
+	const r = rand.intBetween(0, 255);
+	const g = rand.intBetween(0, 255);
+	const b = rand.intBetween(0, 255);
+	return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
 export function buildCardDeck(): Card[] {

@@ -10,6 +10,8 @@ interface StockProps {
 	dragData: DragData,
 	onClickEmpty: () => void,
 	onClickCard: () => void,
+
+	rainbowTrapActive: boolean,
 }
 
 export default function Stock(props: StockProps) {
@@ -21,6 +23,8 @@ export default function Stock(props: StockProps) {
 	return <div className="stock" onClick={props.onClickEmpty}>
 		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 			location={CardLocation.Stock} indexInLocation={0} dragData={dragData}
-			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1} />)}
+			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1}
+			rainbowTrapActive={props.rainbowTrapActive}
+		/>)}
 	</div>;
 }
