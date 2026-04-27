@@ -1,5 +1,5 @@
 import Depot from "./Depot";
-import { Card, DragData } from "./types";
+import { Card, DragData } from "../types";
 
 import "./Tableau.css";
 

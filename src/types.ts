@@ -11,7 +11,7 @@ export interface Vector2 {
 export enum CardLocation {
 	Depot,
 	Foundation,
-	Store,
+	Stock,
 	Waste,
 }
 

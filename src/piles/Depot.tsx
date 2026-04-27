@@ -1,6 +1,6 @@
-import CardObject from "./CardObject";
-import { Card, CardLocation, DragData } from "./types";
-import { getCardUid } from "./utils";
+import CardObject from "../CardObject";
+import { Card, CardLocation, DragData } from "../types";
+import { getCardUid } from "../utils";
 
 import "./Depot.css";
 

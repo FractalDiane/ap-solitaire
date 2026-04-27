@@ -1,22 +1,14 @@
 import { useMemo, useState } from "react";
 import { buildCardDeck, doRectsOverlap, rectDistanceSquared } from "./utils";
 import { Card, CardLocation, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
-import Tableau from "./Tableau";
-import Foundation from "./Foundation";
+import Tableau from "./piles/Tableau";
+import Foundation from "./piles/Foundation";
 
 import "./App.css";
+import Waste from "./piles/Waste";
+import Stock from "./piles/Stock";
 
 function App() {
-	/*const testCard: Card = {suit: Suit.Hearts, value: 2, isFaceUp: true, isJoker: false};
-	const testCard2: Card = {suit: Suit.Diamonds, value: 4, isFaceUp: true, isJoker: false};
-	const testCard3: Card = {suit: Suit.Clubs, value: 7, isFaceUp: true, isJoker: false};
-	const testCard4: Card = {suit: Suit.Spades, value: 9, isFaceUp: true, isJoker: false};*/
-
-	/*const [foundations, setFoundations] = useState<Card[][]>([[testCard], [testCard2], [testCard3], [testCard4]]);
-	const [tableau, setTableau] = useState<Card[][]>(generateNewGame);
-	const [stock, setStock] = useState<Card[]>([]);
-	const [waste, setWaste] = useState<Card[]>([]);*/
-
 	const [gameState, setGameState] = useState(generateNewGame);
 
 	const [draggedCard, setDraggedCard] = useState("");
@@ -24,23 +16,6 @@ function App() {
 	const [draggedCardStartPos, setDraggedCardStartPos] = useState<Vector2>({x: 0, y: 0});
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/*function generateNewGame(): Card[][] {
-		const cards = buildCardDeck();
-		const newTableau: Card[][] = [[], [], [], [], [], [], []];
-		let depotSize = 1;
-		for (let d = 0; d < 7; ++d) {
-			for (let c = 0; c < depotSize; ++c) {
-				const thisCard = cards.pop()!;
-				thisCard.isFaceUp = c == d;
-				newTableau[d].push(thisCard);
-			}
-
-			++depotSize;
-		}
-
-		return newTableau;
-	}*/
 
 	function generateNewGame(): GameState {
 		const cards = buildCardDeck();
@@ -56,14 +31,37 @@ function App() {
 			++depotSize;
 		}
 
-		console.log(newTableau);
-
 		return {
 			tableau: newTableau,
 			stock: cards,
 			foundations: [[], [], [], []],
 			waste: [],
 		};
+	}
+
+	function drawCard() {
+		const newState = {...gameState};
+		const card = newState.stock.pop() ?? null;
+		if (card !== null) {
+			card.isFaceUp = true;
+			newState.waste.push(card);
+			setGameState(newState);
+		} else {
+			console.log("stock empty");
+		}
+	}
+
+	function resetStock() {
+		const newState = {...gameState};
+		const cards = newState.waste;
+		cards.reverse();
+		for (const card of cards) {
+			card.isFaceUp = false;
+		}
+
+		newState.waste = [];
+		newState.stock = cards;
+		setGameState(newState);
 	}
 
 	function tryAddCardsToDepot(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
@@ -78,19 +76,19 @@ function App() {
 		}
 	}
 
-	function takeCardFromDepot(index: number, indexInStack: number, newTableau: Card[][], newFoundations: Card[][]): [Card[][], Card[][]] {
+	function takeCardFromDepot(index: number, indexInStack: number, newTableau: Card[][], newFoundations: Card[][], newWaste: Card[]): [Card[][], Card[][], Card[]] {
 		newTableau[index] = newTableau[index].slice(0, indexInStack);
 		if (newTableau[index].length > 0) {
 			newTableau[index][newTableau[index].length - 1].isFaceUp = true;
 		}
 
-		return [newTableau, newFoundations];
+		return [newTableau, newFoundations, newWaste];
 	}
 
 	function tryAddCardsToFoundation(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
 		const targetCard: Card | null = gameState.foundations[index][gameState.foundations[index].length - 1] ?? null;
 		const bottomCard = cards[0];
-		if (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard.suit && bottomCard.value === targetCard.value + 1) {
+		if (cards.length === 1 && (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard?.suit && bottomCard.value === targetCard?.value + 1)) {
 			const newFoundations = [...gameState.foundations];
 			newFoundations[index] = newFoundations[index].concat(cards);
 			return [gameState.tableau, newFoundations];
@@ -99,9 +97,14 @@ function App() {
 		}
 	}
 
-	function takeCardFromFoudnation(index: number, _: number, newTableau: Card[][], newFoundations: Card[][]): [Card[][], Card[][]] {
+	function takeCardFromFoundation(index: number, _: number, newTableau: Card[][], newFoundations: Card[][], newWaste: Card[]): [Card[][], Card[][], Card[]] {
 		newFoundations[index].pop();
-		return [newTableau, newFoundations];
+		return [newTableau, newFoundations, newWaste];
+	}
+
+	function takeCardFromWaste(_: number, __: number, newTableau: Card[][], newFoundations: Card[][], newWaste: Card[]): [Card[][], Card[][], Card[]] {
+		newWaste.pop();
+		return [newTableau, newFoundations, newWaste];
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,16 +134,17 @@ function App() {
 
 		if (closestZone !== null) {
 			const addFunc = closestZone.location === CardLocation.Foundation ? tryAddCardsToFoundation : tryAddCardsToDepot;
-			const removeFunc = location === CardLocation.Foundation ? takeCardFromFoudnation : takeCardFromDepot;
+			const removeFunc = location === CardLocation.Foundation ? takeCardFromFoundation : location === CardLocation.Depot ? takeCardFromDepot : takeCardFromWaste;
 
 			let [newTableau, newFoundations] = (addFunc)(cards, closestZone.index);
+			let newWaste = gameState.waste;
 			if (newTableau !== null && newFoundations !== null) {
-				[newTableau, newFoundations] = (removeFunc)(index, indexInStack, newTableau, newFoundations);
+				[newTableau, newFoundations, newWaste] = (removeFunc)(index, indexInStack, newTableau, newFoundations, newWaste);
 				setGameState({
 					tableau: newTableau,
 					foundations: newFoundations,
 					stock: gameState.stock,
-					waste: gameState.waste,
+					waste: newWaste,
 				});
 			}
 		}
@@ -176,6 +180,8 @@ function App() {
 		}
 	}}>
 		<div className="foundations-container">
+			<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} />
+			<Waste cards={gameState.waste} dragData={dragData} />
 			{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} />)}
 		</div>
 		<Tableau depots={gameState.tableau} dragData={dragData} />

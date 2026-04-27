@@ -32,7 +32,8 @@ export default function CardObject(props: CardObjectProps) {
 				zIndex: props.stackIndex + 100 + (isBeingDragged ? 1000 : 0),
 				transform: isBeingDragged ? `translateX(${props.dragData.dragOffset.x - props.dragData.dragStartPos.x}px) translateY(${props.dragData.dragOffset.y - props.dragData.dragStartPos.y}px)` : "none",
 			}} className={`card-object ${props.staggered ? "staggered" : ""} ${props.card.isFaceUp ? Suit[props.card.suit].toLowerCase() : "face-down"}`}
-			onMouseDown={(e) => {if (props.card.isFaceUp) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
+			onMouseDown={(e) => {
+				if (props.card.isFaceUp || props.location === CardLocation.Stock) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 		onMouseUp={(e) => {if (isBeingDragged) props.dragData.onMouseUp({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 			>
 			{props.card.isFaceUp && <>

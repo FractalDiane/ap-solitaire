@@ -1,0 +1,7 @@
+.stock {
+	height: 200px;
+	width: 140px;
+	margin-bottom: 48px;
+	margin-right: 24px;
+	display: grid;
+}
