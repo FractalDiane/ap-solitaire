@@ -1,0 +1,74 @@
+.card-object {
+	background-color: white;
+	border-radius: 8px;
+	outline: 4px black;
+	outline-style: groove;
+	width: 140px;
+	height: 200px;
+
+	--image-hearts: url(./assets/heart.svg);
+	--image-diamonds: url(./assets/diamond.svg);
+	--image-clubs: url(./assets/club.svg);
+	--image-spades: url(./assets/spade.svg);
+
+	background-repeat: no-repeat;
+	background-size: 40px;
+	background-position: center;
+
+	&.staggered {
+		margin-bottom: -150px;
+	}
+
+	&:not(.staggered) {
+		grid-area: 1 / 1;
+	}
+
+	&.hearts {
+		background-image: var(--image-hearts);
+	}
+
+	&.diamonds {
+		background-image: var(--image-diamonds);
+	}
+
+	&.clubs {
+		background-image: var(--image-clubs);
+	}
+
+	&.spades {
+		background-image: var(--image-spades);
+	}
+
+	&.face-down {
+		background-color: blueviolet;
+	}
+
+	.text {
+		color: black;
+		font-family: Helvetica, sans-serif;
+		font-size: 24pt;
+		font-weight: bolder;
+		user-select: none;
+	}
+
+	.text.flip {
+		transform: scaleY(-1);
+	}
+
+	.text.red {
+		color: red;
+	}
+
+	img.center {
+		width: 40px;
+	}
+
+	img.top {
+		width: 32px;
+	}
+
+	img.bottom {
+		width: 32px;
+		transform: scaleY(-1);
+	}
+}
