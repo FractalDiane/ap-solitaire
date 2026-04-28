@@ -1,4 +1,4 @@
-import { Suit, Vector2, type Card } from "./types";
+import { cardWordValues, Suit, Vector2, type Card } from "./types";
 
 import { create } from "random-seed";
 
@@ -26,6 +26,11 @@ export function rectDistanceSquared(a: DOMRect, b: DOMRect): number {
 
 export function getCardUid(card: Card): string {
 	return `${Suit[card.suit].substring(0, 1)}${card.value}`;
+}
+
+export function getCardUidFromItemName(name: string): string {
+	const split = name.split(" ");
+	return `${split[2].substring(0, 1)}${cardWordValues.get(split[0]) ?? split[0]}`
 }
 
 export function getRandomCardColor(cardId: string): string {

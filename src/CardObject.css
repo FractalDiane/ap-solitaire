@@ -39,6 +39,10 @@
 		background-image: var(--image-spades);
 	}
 
+	&.locked {
+		background-color: darkred;
+	}
+
 	&.face-down {
 		background-color: blueviolet;
 	}

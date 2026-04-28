@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
-import { buildCardDeck, doRectsOverlap, rectDistanceSquared } from "./utils";
+import { buildCardDeck, doRectsOverlap, getCardUid, getCardUidFromItemName, rectDistanceSquared } from "./utils";
 import { Card, CardLocation, ConnectionInfo, ConnectionStatus, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
@@ -21,12 +21,16 @@ function App() {
 	const websocket = useRef<WebSocket | null>(null);
 	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
 	const dataPackage = useRef<object>({});
+	const itemIdToName = useRef<Map<string, string>>(new Map());
+	const cardsToUnlock = useRef<string[]>([]);
+	const archipelagoSeed = useRef("");
+	const archipelagoSlot = useRef("");
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
 	const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
 
-	const [unlockedCards, setUnlockedCards] = useState(new Set<string>());
+	const [unlockedCards, setUnlockedCards] = useState<string[]>([]);
 	const [mirrorTrapActive, setMirrorTrapActive] = useState(false);
-	const [rainbowTrapActive, setRainbowTrapActive] = useState(true);
+	const [rainbowTrapActive, setRainbowTrapActive] = useState(false);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,19 +40,16 @@ function App() {
 
 	function onClickConnect(isDisconnect: boolean, info: ConnectionInfo) {
 		if (!isDisconnect) {
-			try {
-				const socket = new WebSocket(`wss://${info.address}`);
-				socket.onopen = onWebsocketConnect;
-				socket.onmessage = onWebsocketMessage;
-				socket.onerror = onWebsocketError;
-				socket.onclose = onWebsocketDisconnect;
+			const socket = new WebSocket(`wss://${info.address}`);
+			socket.onopen = onWebsocketConnect;
+			socket.onmessage = onWebsocketMessage;
+			socket.onerror = onWebsocketError;
+			socket.onclose = onWebsocketDisconnect;
 
-				websocket.current = socket;
-				connectInfo.current = info;
-				setConnectionStatus(ConnectionStatus.Connecting);
-			} catch (e) {
-				console.error(e);
-			}
+			websocket.current = socket;
+			connectInfo.current = info;
+			setConnectionStatus(ConnectionStatus.Connecting);
+			archipelagoSlot.current = info.slot;
 		} else {
 			setConnectionStatus(ConnectionStatus.Disconnecting);
 			websocket.current?.close();
@@ -64,7 +65,7 @@ function App() {
 		sendCommand({
 			cmd: "Connect",
 			tags: ["DeathLink"],
-			game: null,
+			game: "Solitaire",
 			password: connectInfo.current.password,
 			name: connectInfo.current.slot,
 			uuid: uuidv4(),
@@ -77,61 +78,102 @@ function App() {
 	function onWebsocketMessage(msg: MessageEvent) {
 		const data = JSON.parse(msg.data);
 
-		const args = data[0] ?? {};
-		const cmd = args.cmd ?? "";
+		for (const packet of data) {
+			const cmd = packet.cmd ?? "";
 
-		switch (cmd) {
-			case "RoomInfo": {
-				const localChecksums = JSON.parse(localStorage.getItem("dataChecksums") ?? "{}");
-				const staleGames = [];
-				for (const [game, checksum] of Object.entries(args.datapackage_checksums)) {
-					if (localChecksums[game] !== checksum) {
-						staleGames.push(game);
+			console.log(packet);
+
+			switch (cmd) {
+				case "RoomInfo": {
+					archipelagoSeed.current = packet.seed_name;
+					const localChecksums = JSON.parse(localStorage.getItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
+					console.log(localChecksums);
+					const staleGames = [];
+					for (const [game, checksum] of Object.entries(packet.datapackage_checksums)) {
+						if (localChecksums[game] !== checksum) {
+							staleGames.push(game);
+						}
 					}
-				}
 
-				if (staleGames.length > 0) {
-					sendCommand({
-						cmd: "GetDataPackage",
-						//games: staleGames,
-					});
+					if (staleGames.length > 0) {
+						sendCommand({
+							cmd: "GetDataPackage",
+							//games: staleGames,
+						});
 
-					localStorage.setItem("dataChecksums", JSON.stringify(args.datapackage_checksums));
-				} else {
-					dataPackage.current = JSON.parse(localStorage.getItem("data") ?? "{}");
-				}
-			} break;
+						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
+					} else {
+						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlot.current}`) ?? "{}");
+						
+						const itemIdToNameMap = new Map<string, string>();
+						for (const [name, id] of Object.entries<number>(dataPackage.current["Solitaire"]["item_name_to_id"])) {
+							itemIdToNameMap.set(String(id), name);
+						}
 
-			case "DataPackage": {
-				localStorage.setItem("data", msg.data);
-				dataPackage.current = args.data.games;
-			} break;
-
-			case "Connected": {
-				setConnectionStatus(ConnectionStatus.Connected);
-				console.log(args);
-			} break;
-
-			case "ConnectionRefused": {
-				setConnectionStatus(ConnectionStatus.Disconnected);
-			} break;
-
-			case "PrintJSON": {
-				let result = "";
-				for (const part of args.data) {
-					switch (part.type ?? "text") {
-						case "text": {
-							result += part.text;
-						} break;
+						itemIdToName.current = itemIdToNameMap;
 					}
-				}
+				} break;
 
-				printToConsole(result);
-			} break;
-			
-			default: {
-				console.log(data);
-			} break;
+				case "DataPackage": {
+					console.log(packet.data.games);
+					localStorage.setItem(`data_${archipelagoSeed.current}_${archipelagoSlot.current}`, JSON.stringify(packet.data.games));
+					dataPackage.current = packet.data.games;
+
+					const itemIdToNameMap = new Map<string, string>();
+					for (const [name, id] of Object.entries<number>(packet.data.games.Solitaire.item_name_to_id)) {
+						itemIdToNameMap.set(String(id), name);
+					}
+
+					itemIdToName.current = itemIdToNameMap;
+
+					if (cardsToUnlock.current.length > 0) {
+						for (const card of cardsToUnlock.current) {
+							unlockCard(card);
+						}
+
+						cardsToUnlock.current = [];
+					}
+				} break;
+
+				case "Connected": {
+					setConnectionStatus(ConnectionStatus.Connected);
+					console.log(packet);
+				} break;
+
+				case "ConnectionRefused": {
+					setConnectionStatus(ConnectionStatus.Disconnected);
+				} break;
+
+				case "PrintJSON": {
+					let result = "";
+					for (const part of packet.data) {
+						switch (part.type ?? "text") {
+							case "text": {
+								result += part.text;
+							} break;
+						}
+					}
+
+					printToConsole(result);
+				} break;
+
+				case "ReceivedItems": {
+					if (Object.keys(dataPackage.current).length > 0) {
+						for (const item of packet.items) {
+							const card = itemIdToName.current.get(String(item.item));
+							if (card !== undefined) {
+								unlockCard(card);
+							}
+						}
+					} else {
+						cardsToUnlock.current = cardsToUnlock.current.concat(packet.items);
+					}
+				} break;
+				
+				default: {
+					
+				} break;
+			}
 		}
 	}
 
@@ -184,6 +226,13 @@ function App() {
 		}
 	}
 
+	function unlockCard(name: string) {
+		const id = getCardUidFromItemName(name);
+		const newUnlocked = [...unlockedCards];
+		newUnlocked.push(id);
+		setUnlockedCards(newUnlocked);
+	}
+
 	function drawCard() {
 		const newState = {...gameState};
 		const card = newState.stock.pop() ?? null;
@@ -231,15 +280,20 @@ function App() {
 	}
 
 	function tryAddCardsToFoundation(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
-		const targetCard: Card | null = gameState.foundations[index][gameState.foundations[index].length - 1] ?? null;
-		const bottomCard = cards[0];
-		if (cards.length === 1 && (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard?.suit && bottomCard.value === targetCard?.value + 1)) {
-			const newFoundations = [...gameState.foundations];
-			newFoundations[index] = newFoundations[index].concat(cards);
-			return [gameState.tableau, newFoundations];
-		} else {
-			return [null, null];
+		if (unlockedCards.includes(getCardUid(cards[0]))) {
+			const targetCard: Card | null = gameState.foundations[index][gameState.foundations[index].length - 1] ?? null;
+			const bottomCard = cards[0];
+			if (cards.length === 1 && (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard?.suit && bottomCard.value === targetCard?.value + 1)) {
+				const newFoundations = [...gameState.foundations];
+				newFoundations[index] = newFoundations[index].concat(cards);
+
+
+
+				return [gameState.tableau, newFoundations];
+			}
 		}
+		
+		return [null, null];
 	}
 
 	function takeCardFromFoundation(index: number, _: number, newTableau: Card[][], newFoundations: Card[][], newWaste: Card[]): [Card[][], Card[][], Card[]] {
@@ -327,11 +381,11 @@ function App() {
 		<div id="main-screen">
 			<div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
 				<div className="foundations-container">
-					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} rainbowTrapActive={rainbowTrapActive} />
-					<Waste cards={gameState.waste} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />
-					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />)}
+					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
+					<Waste cards={gameState.waste} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
+					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />)}
 				</div>
-				<Tableau depots={gameState.tableau} dragData={dragData} rainbowTrapActive={rainbowTrapActive} />
+				<Tableau depots={gameState.tableau} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
 			</div>
 			<div id="archipelago-info">
 				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} />

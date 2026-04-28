@@ -81,6 +81,13 @@ export const cardValues = [
 	"K",
 ];
 
+export const cardWordValues = new Map([
+	["Ace", 1],
+	["Jack", 11],
+	["Queen", 12],
+	["King", 13],
+]);
+
 export const suitImages = [
 	imageHeart,
 	imageDiamond,
