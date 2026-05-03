@@ -1,4 +1,4 @@
-import { cardWordValues, Suit, Vector2, type Card } from "./types";
+import { cardNumberValues, cardSuitCodes, cardWordValues, Suit, Vector2, type Card } from "./types";
 
 import { create } from "random-seed";
 
@@ -33,12 +33,23 @@ export function getCardUidFromItemName(name: string): string {
 	return `${split[2].substring(0, 1)}${cardWordValues.get(split[0]) ?? split[0]}`
 }
 
+export function getCardNameFromUid(id: string): string {
+	const suit = id[0];
+	const value = id.substring(1);
+	return `${cardNumberValues.get(Number(value)) ?? value} of ${cardSuitCodes.get(suit)}`
+}
+
 export function getRandomCardColor(cardId: string): string {
 	const rand = create(cardId);
 	const r = rand.intBetween(0, 255);
 	const g = rand.intBetween(0, 255);
 	const b = rand.intBetween(0, 255);
 	return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+export function getRandomHueShift(cardId: string): number {
+	const rand = create(cardId);
+	return rand.intBetween(0, 359);
 }
 
 export function buildCardDeck(): Card[] {

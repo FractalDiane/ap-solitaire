@@ -50,9 +50,20 @@
 	.text {
 		color: black;
 		font-family: Helvetica, sans-serif;
-		font-size: 24pt;
+		font-size: 22pt;
 		font-weight: bolder;
 		user-select: none;
+		position: absolute;
+		z-index: 15;
+		left: 6px;
+		top: 2px;
+
+		&.bottom {
+			right: 6px;
+			bottom: 2px;
+			left: unset;
+			transform: scaleY(-1);
+		}
 	}
 
 	.text.flip {
@@ -63,16 +74,29 @@
 		color: red;
 	}
 
-	img.center {
-		width: 40px;
+	img.card {
+		width: 140px;
+		height: 200px;
+		position: absolute;
+		z-index: 10;
+		border-radius: 8px;
+		outline: 4px black;
+		outline-style: groove;
+		user-select: none;
 	}
 
-	img.top {
+	img.suit {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		z-index: 15;
 		width: 32px;
-	}
 
-	img.bottom {
-		width: 32px;
-		transform: scaleY(-1);
+		&.bottom {
+			transform: scaleY(-1);
+			top: unset;
+			left: 6px;
+			bottom: 6px;
+		}
 	}
 }

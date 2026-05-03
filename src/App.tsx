@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
-import { buildCardDeck, doRectsOverlap, getCardUid, getCardUidFromItemName, rectDistanceSquared } from "./utils";
+import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getCardUidFromItemName, rectDistanceSquared } from "./utils";
 import { Card, CardLocation, ConnectionInfo, ConnectionStatus, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
@@ -280,14 +280,24 @@ function App() {
 	}
 
 	function tryAddCardsToFoundation(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
-		if (unlockedCards.includes(getCardUid(cards[0]))) {
+		const cardId = getCardUid(cards[0]);
+		if (unlockedCards.includes(cardId)) {
 			const targetCard: Card | null = gameState.foundations[index][gameState.foundations[index].length - 1] ?? null;
 			const bottomCard = cards[0];
 			if (cards.length === 1 && (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard?.suit && bottomCard.value === targetCard?.value + 1)) {
 				const newFoundations = [...gameState.foundations];
 				newFoundations[index] = newFoundations[index].concat(cards);
 
+				const cardName = getCardNameFromUid(cardId);
+				const checks = [dataPackage.current.Solitaire.location_name_to_id[cardName]];
+				if (cards[0].value == 13) {
+					checks.push(dataPackage.current.Solitaire.location_name_to_id[`${cards[0].suit} Done`]);
+				}
 
+				sendCommand({
+					cmd: "LocationChecks",
+					locations: checks,
+				});
 
 				return [gameState.tableau, newFoundations];
 			}
