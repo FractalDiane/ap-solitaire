@@ -124,10 +124,10 @@ export const cardNumberValues = new Map([
 ]);
 
 export const cardSuitCodes = new Map([
-	["H", Suit.Hearts],
-	["D", Suit.Diamonds],
-	["C", Suit.Clubs],
-	["S", Suit.Spades],
+	["H", "Hearts"],
+	["D", "Diamonds"],
+	["C", "Clubs"],
+	["S", "Spades"],
 ]);
 
 export const suitImages = [
@@ -203,9 +203,45 @@ export interface ConnectionInfo {
 	password: string,
 }
 
+export interface ArchipelagoOptions {
+	death_link: boolean,
+	death_link_criteria: number,
+	death_link_criteria_count: number,
+	death_link_punishment: number,
+	trap_fill_percentage: number,
+}
+
 export enum ConnectionStatus {
 	Disconnected,
 	Disconnecting,
 	Connecting,
 	Connected,
 }
+
+export enum DeathLinkCriteria {
+	GameReset,
+	ExhaustDeck,
+}
+
+export enum DeathLinkPunishment {
+	None,
+	RandomTrap,
+	Freeze,
+	Defoundation,
+	Blackout,
+	ResetGame,
+}
+
+export enum TrapType {
+	RainbowTrap,
+	MirrorTrap,
+	FreezeTrap,
+}
+
+export interface DataPackageEntry {
+	item_name_to_id: Record<string, number>,
+	location_name_to_id: Record<string, number>,
+	checksum: string,
+}
+
+export type DataPackage = Record<string, DataPackageEntry>;

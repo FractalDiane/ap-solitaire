@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
-import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getCardUidFromItemName, rectDistanceSquared } from "./utils";
-import { Card, CardLocation, ConnectionInfo, ConnectionStatus, DragData, DropZone, GameState, SuitColors, Vector2 } from "./types";
+import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getCardUidFromItemName, getRandomTrapType, rectDistanceSquared } from "./utils";
+import { ArchipelagoOptions, Card, CardLocation, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -20,7 +20,8 @@ function App() {
 
 	const websocket = useRef<WebSocket | null>(null);
 	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
-	const dataPackage = useRef<object>({});
+	const dataPackage = useRef<DataPackage>({});
+	const players = useRef<string[]>([]);
 	const itemIdToName = useRef<Map<string, string>>(new Map());
 	const cardsToUnlock = useRef<string[]>([]);
 	const archipelagoSeed = useRef("");
@@ -28,9 +29,19 @@ function App() {
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
 	const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
 
+	const [archipelagoOptions, setArchipelagoOptions] = useState<ArchipelagoOptions>({
+		death_link: false,
+		death_link_criteria: 0,
+		death_link_criteria_count: 0,
+		death_link_punishment: 0,
+		trap_fill_percentage: 0,
+	});
 	const [unlockedCards, setUnlockedCards] = useState<string[]>([]);
 	const [mirrorTrapActive, setMirrorTrapActive] = useState(false);
 	const [rainbowTrapActive, setRainbowTrapActive] = useState(false);
+
+	const [gameResetCount, setGameResetCount] = useState(0);
+	const [throughDeckCount, setThroughDeckCount] = useState(0);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -57,7 +68,7 @@ function App() {
 	}
 
 	function sendCommand(command: object) {
-		console.log(websocket);
+		console.log(command);
 		websocket.current?.send(JSON.stringify([command]));
 	}
 
@@ -104,9 +115,10 @@ function App() {
 						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
 					} else {
 						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlot.current}`) ?? "{}");
+						console.log(dataPackage.current);
 						
 						const itemIdToNameMap = new Map<string, string>();
-						for (const [name, id] of Object.entries<number>(dataPackage.current["Solitaire"]["item_name_to_id"])) {
+						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
 							itemIdToNameMap.set(String(id), name);
 						}
 
@@ -137,12 +149,42 @@ function App() {
 
 				case "Connected": {
 					setConnectionStatus(ConnectionStatus.Connected);
-					console.log(packet);
+					setArchipelagoOptions(packet.slot_data);
+					players.current = packet.players.map(pl => pl.alias);
 				} break;
 
 				case "ConnectionRefused": {
 					setConnectionStatus(ConnectionStatus.Disconnected);
 				} break;
+
+				/*
+				[
+					{
+						"text": "2",
+						"type": "player_id"
+					},
+					{
+						"text": " found their "
+					},
+					{
+						"text": "30",
+						"player": 2,
+						"flags": 1,
+						"type": "item_id"
+					},
+					{
+						"text": " ("
+					},
+					{
+						"text": "14",
+						"player": 2,
+						"type": "location_id"
+					},
+					{
+						"text": ")"
+					}
+				]
+				*/
 
 				case "PrintJSON": {
 					let result = "";
@@ -150,6 +192,18 @@ function App() {
 						switch (part.type ?? "text") {
 							case "text": {
 								result += part.text;
+							} break;
+
+							case "player_id": {
+								result += players.current[Number(part.text)];
+							} break;
+
+							case "item_id": {
+								result += itemIdToName.current.get(part.text);
+							} break;
+
+							case "location_id": {
+
 							} break;
 						}
 					}
@@ -163,10 +217,67 @@ function App() {
 							const card = itemIdToName.current.get(String(item.item));
 							if (card !== undefined) {
 								unlockCard(card);
+							} else {
+								switch (item.item) {
+									case "Rainbow Trap": {
+										applyTrap(TrapType.RainbowTrap);
+									} break;
+
+									case "Mirror Trap": {
+										applyTrap(TrapType.MirrorTrap);
+									} break;
+
+									case "Freeze Trap": {
+										applyTrap(TrapType.FreezeTrap);
+									} break;
+								}
 							}
 						}
 					} else {
 						cardsToUnlock.current = cardsToUnlock.current.concat(packet.items);
+					}
+				} break;
+
+				case "Bounced": {
+					if (packet.tags.includes("DeathLink") && archipelagoOptions.death_link) {
+						switch (archipelagoOptions.death_link_punishment) {
+							case DeathLinkPunishment.ResetGame: {
+								setGameState(generateNewGame);
+							} break;
+
+							case DeathLinkPunishment.RandomTrap: {
+								applyTrap(getRandomTrapType());
+							} break;
+
+							case DeathLinkPunishment.Defoundation: {
+								const newGameState = {...gameState};
+								for (const foundation of newGameState.foundations) {
+									const card = foundation.pop();
+									if (card !== undefined) {
+										newGameState.stock.splice(0, 0, card);
+									}
+								}
+
+								setGameState(newGameState);
+							} break;
+
+							case DeathLinkPunishment.Blackout: {
+								const newGameState = {...gameState};
+								for (const depot of newGameState.tableau) {
+									for (let i = 0; i < depot.length - 1; ++i) {
+										depot[i].isFaceUp = false;
+									}
+								}
+
+								setGameState(newGameState);
+							} break;
+
+							case DeathLinkPunishment.Freeze: {
+
+							} break;
+
+							default: break;
+						}
 					}
 				} break;
 				
@@ -240,8 +351,6 @@ function App() {
 			card.isFaceUp = true;
 			newState.waste.push(card);
 			setGameState(newState);
-		} else {
-			console.log("stock empty");
 		}
 	}
 
@@ -256,6 +365,25 @@ function App() {
 		newState.waste = [];
 		newState.stock = cards;
 		setGameState(newState);
+
+		if (archipelagoOptions.death_link && archipelagoOptions.death_link_criteria === DeathLinkCriteria.ExhaustDeck) {
+			const throughCount = throughDeckCount + 1;
+			if (throughCount >= archipelagoOptions.death_link_criteria_count) {
+				sendCommand({
+					cmd: "Bounce",
+					tags: ["DeathLink"],
+					data: {
+						"time": Date.now(),
+						"cause": `${archipelagoSlot} went through the deck too many times.`,
+						"source": archipelagoSlot,
+					},
+				});
+
+				setThroughDeckCount(0);
+			} else {
+				setThroughDeckCount(throughCount);
+			}
+		}
 	}
 
 	function tryAddCardsToDepot(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
@@ -288,7 +416,7 @@ function App() {
 				const newFoundations = [...gameState.foundations];
 				newFoundations[index] = newFoundations[index].concat(cards);
 
-				const cardName = getCardNameFromUid(cardId);
+				const cardName = `${getCardNameFromUid(cardId)} on foundation`;
 				const checks = [dataPackage.current.Solitaire.location_name_to_id[cardName]];
 				if (cards[0].value == 13) {
 					checks.push(dataPackage.current.Solitaire.location_name_to_id[`${cards[0].suit} Done`]);
@@ -314,6 +442,31 @@ function App() {
 	function takeCardFromWaste(_: number, __: number, newTableau: Card[][], newFoundations: Card[][], newWaste: Card[]): [Card[][], Card[][], Card[]] {
 		newWaste.pop();
 		return [newTableau, newFoundations, newWaste];
+	}
+
+	function applyTrap(trapType: TrapType) {
+		switch (trapType) {
+			case TrapType.RainbowTrap: {
+				setRainbowTrapActive(true);
+				setTimeout(() => {
+					setRainbowTrapActive(false);
+				}, 30000);
+			} break;
+
+			case TrapType.MirrorTrap: {
+				setMirrorTrapActive(true);
+				setTimeout(() => {
+					setMirrorTrapActive(false);
+				}, 30000);
+			} break;
+
+			case TrapType.FreezeTrap: {
+				setRainbowTrapActive(true);
+				setTimeout(() => {
+					setRainbowTrapActive(false);
+				}, 20000);
+			} break;
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,6 +526,32 @@ function App() {
 		return result;
 	}
 
+	function onClickReset() {
+		const reset = confirm(`Really reset the game?${archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset && gameResetCount + 1 >= archipelagoOptions.death_link_criteria_count ? " This will send a DeathLink." : ""}`);
+		if (reset) {
+			setGameState(generateNewGame);
+
+			if (archipelagoOptions.death_link && archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset) {
+				const resetCount = gameResetCount + 1;
+				if (resetCount >= archipelagoOptions.death_link_criteria_count) {
+					sendCommand({
+						cmd: "Bounce",
+						tags: ["DeathLink"],
+						data: {
+							"time": Date.now(),
+							"cause": `${archipelagoSlot} reset their Solitaire game${archipelagoOptions.death_link_criteria_count > 1 ? " too many times" : ""}.`,
+							"source": archipelagoSlot,
+						},
+					});
+
+					setGameResetCount(0);
+				} else {
+					setGameResetCount(resetCount);
+				}
+			}
+		}
+	}
+
 	const dragData = useMemo<DragData>(() => {
 		return {
 			draggedCard: draggedCard,
@@ -390,6 +569,7 @@ function App() {
 		}}>
 		<div id="main-screen">
 			<div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
+				<button onClick={onClickReset}>Reset Game</button>
 				<div className="foundations-container">
 					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
 					<Waste cards={gameState.waste} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />

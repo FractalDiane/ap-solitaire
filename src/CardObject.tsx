@@ -23,7 +23,7 @@ interface CardObjectProps {
 export default function CardObject(props: CardObjectProps) {
 	const id = useMemo(() => getCardUid(props.card), [props.card]);
 	const isRed = useMemo(() => props.card.suit == Suit.Hearts || props.card.suit == Suit.Diamonds, [props.card]);
-	const isUnlocked = true;//useMemo(() => props.unlockedCards.includes(id), [id, props.unlockedCards]);
+	const isUnlocked = useMemo(() => props.unlockedCards.includes(id), [id, props.unlockedCards]);
 	const isBeingDragged = useMemo(
 		() => props.dragData.draggedCard === id || props.allCardsInStack.slice(0, props.stackIndex).some(card => props.dragData.draggedCard === getCardUid(card)),
 		[id, props.dragData.draggedCard, props.allCardsInStack, props.stackIndex],
@@ -35,7 +35,7 @@ export default function CardObject(props: CardObjectProps) {
 				position: "relative",
 				zIndex: props.stackIndex + 100 + (isBeingDragged ? 1000 : 0),
 				transform: isBeingDragged ? `translateX(${props.dragData.dragOffset.x - props.dragData.dragStartPos.x}px) translateY(${props.dragData.dragOffset.y - props.dragData.dragStartPos.y}px)` : "none",
-			}} className={`card-object ${!isUnlocked ? "locked" : ""} ${props.staggered ? "staggered" : ""} ${Suit[props.card.suit].toLowerCase()}`}
+			}} className={`card-object ${props.staggered ? "staggered" : ""} ${Suit[props.card.suit].toLowerCase()}`}
 			onMouseDown={(e) => {
 				if (props.card.isFaceUp || props.location === CardLocation.Stock) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 		onMouseUp={(e) => {if (isBeingDragged) props.dragData.onMouseUp({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
@@ -52,6 +52,7 @@ export default function CardObject(props: CardObjectProps) {
 				<img className="suit bottom" src={suitImages[props.card.suit]} draggable={false} style={{
 					filter: props.rainbowTrapActive ? `hue-rotate(${getRandomHueShift(id)}deg)` : "none",
 				}} />
+				{!isUnlocked && <div className="locked" />}
 				{!props.card.isFaceUp && <div className="facedown" />}
 			</>
 		</div>;

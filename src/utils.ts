@@ -1,4 +1,4 @@
-import { cardNumberValues, cardSuitCodes, cardWordValues, Suit, Vector2, type Card } from "./types";
+import { cardNumberValues, cardSuitCodes, cardWordValues, Suit, TrapType, Vector2, type Card } from "./types";
 
 import { create } from "random-seed";
 
@@ -50,6 +50,10 @@ export function getRandomCardColor(cardId: string): string {
 export function getRandomHueShift(cardId: string): number {
 	const rand = create(cardId);
 	return rand.intBetween(0, 359);
+}
+
+export function getRandomTrapType(): TrapType {
+	return Math.floor(Math.random() * 3);
 }
 
 export function buildCardDeck(): Card[] {
