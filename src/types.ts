@@ -253,6 +253,13 @@ export enum TrapType {
 	FreezeTrap,
 }
 
+export interface NetworkItem {
+	item: number,
+	location: number,
+	player: number,
+	flags: number,
+}
+
 export interface DataPackageEntry {
 	item_name_to_id: Record<string, number>,
 	location_name_to_id: Record<string, number>,

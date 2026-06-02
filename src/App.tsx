@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, Suit, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -28,7 +28,7 @@ function App() {
 	const itemIdToName = useRef<Map<string, string>>(new Map());
 	const locationIdToName = useRef<Map<string, string>>(new Map());
 	//const cardsToUnlock = useRef<string[]>([]);
-	const preDataPackageItems = useRef<object[]>([]);
+	const preDataPackageItems = useRef<NetworkItem[]>([]);
 	const archipelagoSeed = useRef("");
 	const archipelagoSlot = useRef("");
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
