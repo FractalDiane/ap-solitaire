@@ -59,8 +59,6 @@ function App() {
 	const [gameResetCount, setGameResetCount] = useState(0);
 	const [throughDeckCount, setThroughDeckCount] = useState(0);
 
-	
-
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	function printToConsole(msg: string) {
@@ -153,7 +151,6 @@ function App() {
 				} break;
 
 				case "DataPackage": {
-					//console.log(packet.data.games);
 					localStorage.setItem(`data_${archipelagoSeed.current}_${archipelagoSlot.current}`, JSON.stringify(packet.data.games));
 					dataPackage.current = packet.data.games;
 
@@ -176,7 +173,7 @@ function App() {
 				case "Connected": {
 					setConnectionStatus(ConnectionStatus.Connected);
 					setArchipelagoOptions(packet.slot_data);
-					players.current = packet.players.map(pl => pl.alias);
+					players.current = packet.players.map((pl: { alias: object; }) => pl.alias);
 					
 					if (!loadGame()) {
 						generateNewGame();
@@ -221,24 +218,6 @@ function App() {
 							} else {
 								console.error(`Invalid item: ${item.item}`);
 							}
-							
-							/*if (card !== undefined) {
-								unlockCard(card);
-							} else {
-								switch (item.item) {
-									case "Rainbow Trap": {
-										applyTrap(TrapType.RainbowTrap);
-									} break;
-
-									case "Mirror Trap": {
-										applyTrap(TrapType.MirrorTrap);
-									} break;
-
-									case "Freeze Trap": {
-										applyTrap(TrapType.FreezeTrap);
-									} break;
-								}
-							}*/
 						}
 					} else {
 						preDataPackageItems.current = preDataPackageItems.current.concat(packet.items);
@@ -249,7 +228,9 @@ function App() {
 					if (packet.tags.includes("DeathLink") && archipelagoOptions.death_link) {
 						switch (archipelagoOptions.death_link_punishment) {
 							case DeathLinkPunishment.ResetGame: {
-								setGameState(generateNewGame);
+								const newState = generateNewGame();
+								setGameState(newState);
+								saveGame(newState);
 							} break;
 
 							case DeathLinkPunishment.RandomTrap: {
@@ -266,6 +247,7 @@ function App() {
 								}
 
 								setGameState(newGameState);
+								saveGame(newGameState);
 							} break;
 
 							case DeathLinkPunishment.Blackout: {
@@ -277,6 +259,7 @@ function App() {
 								}
 
 								setGameState(newGameState);
+								saveGame(newGameState);
 							} break;
 
 							case DeathLinkPunishment.Freeze: {
@@ -289,7 +272,7 @@ function App() {
 				} break;
 				
 				default: {
-					
+					console.warn(`UNIMPLEMENTED PACKET: ${cmd}`);
 				} break;
 			}
 		}
