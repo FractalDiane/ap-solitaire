@@ -8,6 +8,8 @@ import Waste from "./piles/Waste";
 import Stock from "./piles/Stock";
 import ConnectPanel from "./archipelago/ConnectPanel";
 
+import titleBackground from "./assets/sunray.svg";
+
 import "./App.css";
 import Console from "./archipelago/Console";
 import SuitProgressionDisplay from "./archipelago/SuitProgressionDisplay";
@@ -77,6 +79,8 @@ function App() {
 			connectInfo.current = info;
 			setConnectionStatus(ConnectionStatus.Connecting);
 			archipelagoSlot.current = info.slot;
+
+			console.log(gameState);
 		} else {
 			setConnectionStatus(ConnectionStatus.Disconnecting);
 			websocket.current?.close();
@@ -173,70 +177,15 @@ function App() {
 					setConnectionStatus(ConnectionStatus.Connected);
 					setArchipelagoOptions(packet.slot_data);
 					players.current = packet.players.map(pl => pl.alias);
-					console.log(players.current);
+					
+					if (!loadGame()) {
+						generateNewGame();
+					}
 				} break;
 
 				case "ConnectionRefused": {
 					setConnectionStatus(ConnectionStatus.Disconnected);
 				} break;
-
-				/*
-				[
-					{
-						"text": "2",
-						"type": "player_id"
-					},
-					{
-						"text": " found their "
-					},
-					{
-						"text": "30",
-						"player": 2,
-						"flags": 1,
-						"type": "item_id"
-					},
-					{
-						"text": " ("
-					},
-					{
-						"text": "14",
-						"player": 2,
-						"type": "location_id"
-					},
-					{
-						"text": ")"
-					}
-				]
-				*/
-
-				/*
-				[
-					{
-						"text": "1",
-						"type": "player_id"
-					},
-					{
-						"text": " found their "
-					},
-					{
-						"text": "3",
-						"player": 1,
-						"flags": 1,
-						"type": "item_id"
-					},
-					{
-						"text": " ("
-					},
-					{
-						"text": "2",
-						"player": 1,
-						"type": "location_id"
-					},
-					{
-						"text": ")"
-					}
-					]
-				*/
 
 				case "PrintJSON": {
 					let result = "";
@@ -383,24 +332,20 @@ function App() {
 		};
 	}
 
-	function saveGame() {
-		const saveData = JSON.stringify(gameState);
-		localStorage.setItem("save", saveData);
+	function saveGame(state: GameState) {
+		const saveData = JSON.stringify(state);
+		localStorage.setItem(`save_${archipelagoSeed.current}_${archipelagoSlot.current}`, saveData);
 	}
 
-	function loadGame() {
-		const saveData = localStorage.getItem("save");
+	function loadGame(): boolean {
+		const saveData = localStorage.getItem(`save_${archipelagoSeed.current}_${archipelagoSlot.current}`);
 		if (saveData !== null) {
 			setGameState(JSON.parse(saveData));
+			return true;
+		} else {
+			return false;
 		}
 	}
-
-	/*function unlockCard(name: string) {
-		const id = getCardUidFromItemName(name);
-		const newUnlocked = [...unlockedCards];
-		newUnlocked.push(id);
-		setUnlockedCards(newUnlocked);
-	}*/
 
 	function getItem(item: string) {
 		console.log(`Got item: ${item}`);
@@ -448,6 +393,7 @@ function App() {
 			card.isFaceUp = true;
 			newState.waste.push(card);
 			setGameState(newState);
+			saveGame(newState);
 		}
 	}
 
@@ -599,12 +545,15 @@ function App() {
 			let newWaste = gameState.waste;
 			if (newTableau !== null && newFoundations !== null) {
 				[newTableau, newFoundations, newWaste] = (removeFunc)(index, indexInStack, newTableau, newFoundations, newWaste);
-				setGameState({
+				const newState = {
 					tableau: newTableau,
 					foundations: newFoundations,
 					stock: gameState.stock,
 					waste: newWaste,
-				});
+				};
+
+				setGameState(newState);
+				saveGame(newState);
 			}
 		}
 	}
@@ -626,7 +575,9 @@ function App() {
 	function onClickReset() {
 		const reset = confirm(`Really reset the game?${archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset && gameResetCount + 1 >= archipelagoOptions.death_link_criteria_count ? " This will send a DeathLink." : ""}`);
 		if (reset) {
-			setGameState(generateNewGame);
+			const newState = generateNewGame();
+			setGameState(newState);
+			saveGame(newState);
 
 			if (archipelagoOptions.death_link && archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset) {
 				const resetCount = gameResetCount + 1;
@@ -657,6 +608,7 @@ function App() {
 			onMouseDown: onCardMouseDown,
 			onMouseUp: onCardMouseUp,
 		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [draggedCard, draggedCardOffset, draggedCardStartPos]);
 
 	return <div id="actual-root" onMouseMove={(e) => {
@@ -665,7 +617,7 @@ function App() {
 			}
 		}}>
 		<div id="main-screen">
-			<div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
+			{connectionStatus === ConnectionStatus.Connected ? <div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
 				<button onClick={onClickReset}>Reset Game</button>
 				<SuitProgressionDisplay progression={suitProgressions} />
 				<div className="foundations-container">
@@ -674,7 +626,7 @@ function App() {
 					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />)}
 				</div>
 				<Tableau depots={gameState.tableau} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
-			</div>
+			</div> : <div id="title-screen">{false && <img src={titleBackground} />}</div>}
 			<div id="archipelago-info">
 				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} />
 				<Console messages={consoleMessages} />

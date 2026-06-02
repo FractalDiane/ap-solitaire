@@ -1,4 +1,4 @@
-import { suitImages } from "../types";
+import { suitImages, cardValues } from "../types";
 
 import "./SuitProgressionDisplay.css";
 
@@ -8,8 +8,8 @@ interface SuitProgressionDisplayProps {
 
 export default function SuitProgressionDisplay(props: SuitProgressionDisplayProps) {
 	return <div className="suit-progression-display">
-		{props.progression.map((value, suit) => <div className="entry">
-			<img src={suitImages[suit]} /><div className="value">{value}</div>
+		{props.progression.map((value, suit) => <div className="entry" key={suit}>
+			<img src={suitImages[suit]} /><div className="value">{cardValues[value]}</div>
 		</div>)}
 	</div>;
 }
