@@ -9,7 +9,7 @@ interface WasteProps {
 
 	dragData: DragData
 
-	unlockedCards: string[],
+	suitProgressions: number[],
 	rainbowTrapActive: boolean,
 }
 
@@ -17,7 +17,7 @@ export default function Waste(props: WasteProps) {
 	return <div className="waste">
 		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 			location={CardLocation.Waste} indexInLocation={0}
-			dragData={props.dragData} unlockedCards={props.unlockedCards}
+			dragData={props.dragData} suitProgressions={props.suitProgressions}
 			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1}
 			rainbowTrapActive={props.rainbowTrapActive}
 		/>)}

@@ -8,12 +8,12 @@ interface TableauProps {
 	
 	dragData: DragData,
 
-	unlockedCards: string[],
+	suitProgressions: number[],
 	rainbowTrapActive: boolean,
 }
 
 export default function Tableau(props: TableauProps) {
 	return <div className="tableau">
-		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} unlockedCards={props.unlockedCards} rainbowTrapActive={props.rainbowTrapActive} />)}
+		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} suitProgressions={props.suitProgressions} rainbowTrapActive={props.rainbowTrapActive} />)}
 	</div>;
 }

@@ -14,7 +14,7 @@ interface CardObjectProps {
 	location: CardLocation,
 	indexInLocation: number,
 
-	unlockedCards: string[],
+	suitProgressions: number[],
 	rainbowTrapActive: boolean,
 
 	dragData: DragData,
@@ -23,7 +23,8 @@ interface CardObjectProps {
 export default function CardObject(props: CardObjectProps) {
 	const id = useMemo(() => getCardUid(props.card), [props.card]);
 	const isRed = useMemo(() => props.card.suit == Suit.Hearts || props.card.suit == Suit.Diamonds, [props.card]);
-	const isUnlocked = useMemo(() => props.unlockedCards.includes(id), [id, props.unlockedCards]);
+	//const isUnlocked = useMemo(() => props.unlockedCards.includes(id), [id, props.unlockedCards]);
+	const isUnlocked = useMemo(() => props.suitProgressions[props.card.suit] >= props.card.value, [props.card, props.suitProgressions]);
 	const isBeingDragged = useMemo(
 		() => props.dragData.draggedCard === id || props.allCardsInStack.slice(0, props.stackIndex).some(card => props.dragData.draggedCard === getCardUid(card)),
 		[id, props.dragData.draggedCard, props.allCardsInStack, props.stackIndex],
@@ -42,7 +43,7 @@ export default function CardObject(props: CardObjectProps) {
 			>
 			<>
 				<img className="card" src={cardImages.get(id) ?? undefined} draggable={false} style={{
-					filter: props.rainbowTrapActive ? `hue-rotate(${getRandomHueShift(id)}deg)` : !isRed ? "grayscale(1.0)" : "none",
+					filter: props.rainbowTrapActive ? `hue-rotate(${getRandomHueShift(id)}deg)` : "none",
 				}} />
 				<div className={`text ${isRed ? "red" : ""}`}>{cardValues[props.card.value]}</div>
 				<div className={`text bottom ${isRed ? "red" : ""}`}>{cardValues[props.card.value]}</div>

@@ -114,6 +114,8 @@
 		outline-style: groove;
 		width: 100%;
 		height: 100%;
-		background-color: blueviolet;
+		/*background-color: blueviolet;*/
+		background-image: url(./assets/cards3/images/back.png);
+		background-size: 100% 100%;
 	}
 }

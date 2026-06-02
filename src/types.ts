@@ -3,33 +3,41 @@ import imageDiamond from "./assets/diamond.svg";
 import imageClub from "./assets/club.svg";
 import imageSpade from "./assets/spade.svg";
 
-import imageHeartsA from "./assets/cards3/images/cards_01.png";
-import imageHearts2 from "./assets/cards3/images/cards_02.png";
-import imageHearts3 from "./assets/cards3/images/cards_03.png";
-import imageHearts4 from "./assets/cards3/images/cards_04.png";
-import imageHearts5 from "./assets/cards3/images/cards_05.png";
-import imageHearts6 from "./assets/cards3/images/cards_06.png";
-import imageHearts7 from "./assets/cards3/images/cards_07.png";
-import imageHearts8 from "./assets/cards3/images/cards_08.png";
-import imageHearts9 from "./assets/cards3/images/cards_09.png";
-import imageHearts10 from "./assets/cards3/images/cards_10.png";
-import imageHeartsJ from "./assets/cards3/images/cards_11.png";
-import imageHeartsQ from "./assets/cards3/images/cards_12.png";
-import imageHeartsK from "./assets/cards3/images/cards_13.png";
+import imageRed2 from "./assets/cards3/images/card_02.png";
+import imageRed3 from "./assets/cards3/images/card_03.png";
+import imageRed4 from "./assets/cards3/images/card_04.png";
+import imageRed5 from "./assets/cards3/images/card_05.png";
+import imageRed6 from "./assets/cards3/images/card_06.png";
+import imageRed7 from "./assets/cards3/images/card_07.png";
+import imageRed8 from "./assets/cards3/images/card_08.png";
+import imageRed9 from "./assets/cards3/images/card_09.png";
+import imageRed10 from "./assets/cards3/images/card_10.png";
+import imageRedJ from "./assets/cards3/images/card_j.png";
+import imageRedK from "./assets/cards3/images/card_k.png";
 
-import imageDiamondsA from "./assets/cards3/images/cards_14.png";
-import imageDiamonds2 from "./assets/cards3/images/cards_15.png";
-import imageDiamonds3 from "./assets/cards3/images/cards_16.png";
-import imageDiamonds4 from "./assets/cards3/images/cards_17.png";
-import imageDiamonds5 from "./assets/cards3/images/cards_18.png";
-import imageDiamonds6 from "./assets/cards3/images/cards_19.png";
-import imageDiamonds7 from "./assets/cards3/images/cards_20.png";
-import imageDiamonds8 from "./assets/cards3/images/cards_21.png";
-import imageDiamonds9 from "./assets/cards3/images/cards_22.png";
-import imageDiamonds10 from "./assets/cards3/images/cards_23.png";
-import imageDiamondsJ from "./assets/cards3/images/cards_24.png";
-import imageDiamondsQ from "./assets/cards3/images/cards_25.png";
-import imageDiamondsK from "./assets/cards3/images/cards_26.png";
+import imageBlack2 from "./assets/cards3/images/card_02b.png";
+import imageBlack3 from "./assets/cards3/images/card_03b.png";
+import imageBlack4 from "./assets/cards3/images/card_04b.png";
+import imageBlack5 from "./assets/cards3/images/card_05b.png";
+import imageBlack6 from "./assets/cards3/images/card_06b.png";
+import imageBlack7 from "./assets/cards3/images/card_07b.png";
+import imageBlack8 from "./assets/cards3/images/card_08b.png";
+import imageBlack9 from "./assets/cards3/images/card_09b.png";
+import imageBlack10 from "./assets/cards3/images/card_10b.png";
+import imageBlackJ from "./assets/cards3/images/card_jb.png";
+import imageBlackK from "./assets/cards3/images/card_kb.png";
+
+import imageAHearts from "./assets/cards3/images/card_ah.png";
+import imageADiamonds from "./assets/cards3/images/card_ad.png";
+import imageAClubs from "./assets/cards3/images/card_ac.png";
+import imageASpades from "./assets/cards3/images/card_as.png";
+
+import imageQHearts from "./assets/cards3/images/card_qh.png";
+import imageQDiamonds from "./assets/cards3/images/card_qd.png";
+import imageQClubs from "./assets/cards3/images/card_qc.png";
+import imageQSpades from "./assets/cards3/images/card_qs.png";
+
+//import imageBack from "./assets/cards3/images/back.png";
 
 export interface Vector2 {
 	x: number,
@@ -130,6 +138,13 @@ export const cardSuitCodes = new Map([
 	["S", "Spades"],
 ]);
 
+export const cardSuitStrings = new Map([
+	["Hearts", Suit.Hearts],
+	["Diamonds", Suit.Diamonds],
+	["Clubs", Suit.Clubs],
+	["Spades", Suit.Spades],
+]);
+
 export const suitImages = [
 	imageHeart,
 	imageDiamond,
@@ -138,61 +153,61 @@ export const suitImages = [
 ];
 
 export const cardImages = new Map<string, string>([
-	["H1", imageHeartsA],
-	["H2", imageHearts2],
-	["H3", imageHearts3],
-	["H4", imageHearts4],
-	["H5", imageHearts5],
-	["H6", imageHearts6],
-	["H7", imageHearts7],
-	["H8", imageHearts8],
-	["H9", imageHearts9],
-	["H10", imageHearts10],
-	["H11", imageHeartsJ],
-	["H12", imageHeartsQ],
-	["H13", imageHeartsK],
+	["H1", imageAHearts],
+	["H2", imageRed2],
+	["H3", imageRed3],
+	["H4", imageRed4],
+	["H5", imageRed5],
+	["H6", imageRed6],
+	["H7", imageRed7],
+	["H8", imageRed8],
+	["H9", imageRed9],
+	["H10", imageRed10],
+	["H11", imageRedJ],
+	["H12", imageQHearts],
+	["H13", imageRedK],
 
-	["D1", imageDiamondsA],
-	["D2", imageDiamonds2],
-	["D3", imageDiamonds3],
-	["D4", imageDiamonds4],
-	["D5", imageDiamonds5],
-	["D6", imageDiamonds6],
-	["D7", imageDiamonds7],
-	["D8", imageDiamonds8],
-	["D9", imageDiamonds9],
-	["D10", imageDiamonds10],
-	["D11", imageDiamondsJ],
-	["D12", imageDiamondsQ],
-	["D13", imageDiamondsK],
+	["D1", imageADiamonds],
+	["D2", imageRed2],
+	["D3", imageRed3],
+	["D4", imageRed4],
+	["D5", imageRed5],
+	["D6", imageRed6],
+	["D7", imageRed7],
+	["D8", imageRed8],
+	["D9", imageRed9],
+	["D10", imageRed10],
+	["D11", imageRedJ],
+	["D12", imageQDiamonds],
+	["D13", imageRedK],
 
-	["C1", imageHeartsA],
-	["C2", imageHearts2],
-	["C3", imageHearts3],
-	["C4", imageHearts4],
-	["C5", imageHearts5],
-	["C6", imageHearts6],
-	["C7", imageHearts7],
-	["C8", imageHearts8],
-	["C9", imageHearts9],
-	["C10", imageHearts10],
-	["C11", imageHeartsJ],
-	["C12", imageHeartsQ],
-	["C13", imageHeartsK],
+	["C1", imageAClubs],
+	["C2", imageBlack2],
+	["C3", imageBlack3],
+	["C4", imageBlack4],
+	["C5", imageBlack5],
+	["C6", imageBlack6],
+	["C7", imageBlack7],
+	["C8", imageBlack8],
+	["C9", imageBlack9],
+	["C10", imageBlack10],
+	["C11", imageBlackJ],
+	["C12", imageQClubs],
+	["C13", imageBlackK],
 
-	["S1", imageDiamondsA],
-	["S2", imageDiamonds2],
-	["S3", imageDiamonds3],
-	["S4", imageDiamonds4],
-	["S5", imageDiamonds5],
-	["S6", imageDiamonds6],
-	["S7", imageDiamonds7],
-	["S8", imageDiamonds8],
-	["S9", imageDiamonds9],
-	["S10", imageDiamonds10],
-	["S11", imageDiamondsJ],
-	["S12", imageDiamondsQ],
-	["S13", imageDiamondsK],
+	["S1", imageASpades],
+	["S2", imageBlack2],
+	["S3", imageBlack3],
+	["S4", imageBlack4],
+	["S5", imageBlack5],
+	["S6", imageBlack6],
+	["S7", imageBlack7],
+	["S8", imageBlack8],
+	["S9", imageBlack9],
+	["S10", imageBlack10],
+	["S11", imageBlackJ],
+	["S12", imageQSpades],
+	["S13", imageBlackK],
 ]);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

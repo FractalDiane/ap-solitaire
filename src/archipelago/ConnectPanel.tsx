@@ -50,8 +50,5 @@ export default function ConnectPanel(props: ConnectPanelProps) {
 				password: password,
 			})}>{getButtonName()}</button>
 		</form>
-		<div id="connect-panel-settings">
-			Death Link <input type="checkbox"></input>
-		</div>
 	</div>;
 }

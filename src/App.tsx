@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getCardUidFromItemName, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -10,6 +10,7 @@ import ConnectPanel from "./archipelago/ConnectPanel";
 
 import "./App.css";
 import Console from "./archipelago/Console";
+import SuitProgressionDisplay from "./archipelago/SuitProgressionDisplay";
 
 function App() {
 	const [gameState, setGameState] = useState(generateNewGame);
@@ -23,7 +24,9 @@ function App() {
 	const dataPackage = useRef<DataPackage>({});
 	const players = useRef<string[]>([]);
 	const itemIdToName = useRef<Map<string, string>>(new Map());
-	const cardsToUnlock = useRef<string[]>([]);
+	const locationIdToName = useRef<Map<string, string>>(new Map());
+	//const cardsToUnlock = useRef<string[]>([]);
+	const preDataPackageItems = useRef<string[]>([]);
 	const archipelagoSeed = useRef("");
 	const archipelagoSlot = useRef("");
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
@@ -36,12 +39,25 @@ function App() {
 		death_link_punishment: 0,
 		trap_fill_percentage: 0,
 	});
-	const [unlockedCards, setUnlockedCards] = useState<string[]>([]);
+	//const [unlockedCards, setUnlockedCards] = useState<string[]>([]);
+	//const [suitProgressions, setSuitProgressions] = useState<number[]>([0, 0, 0, 0]);
+	const [heartsProgression, setHeartsProgression] = useState(0);
+	const [diamondsProgression, setDiamondsProgression] = useState(0);
+	const [clubsProgression, setClubsProgression] = useState(0);
+	const [spadesProgression, setSpadesProgression] = useState(0);
+
+	const suitProgressions = useMemo(
+		() => [heartsProgression, diamondsProgression, clubsProgression, spadesProgression],
+		[heartsProgression, diamondsProgression, clubsProgression, spadesProgression],
+	);
+
 	const [mirrorTrapActive, setMirrorTrapActive] = useState(false);
 	const [rainbowTrapActive, setRainbowTrapActive] = useState(false);
 
 	const [gameResetCount, setGameResetCount] = useState(0);
 	const [throughDeckCount, setThroughDeckCount] = useState(0);
+
+	
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -122,12 +138,18 @@ function App() {
 							itemIdToNameMap.set(String(id), name);
 						}
 
+						const locationIdToNameMap = new Map<string, string>();
+						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.location_name_to_id)) {
+							locationIdToNameMap.set(String(id), name);
+						}
+
 						itemIdToName.current = itemIdToNameMap;
+						locationIdToName.current = locationIdToNameMap;
 					}
 				} break;
 
 				case "DataPackage": {
-					console.log(packet.data.games);
+					//console.log(packet.data.games);
 					localStorage.setItem(`data_${archipelagoSeed.current}_${archipelagoSlot.current}`, JSON.stringify(packet.data.games));
 					dataPackage.current = packet.data.games;
 
@@ -138,12 +160,12 @@ function App() {
 
 					itemIdToName.current = itemIdToNameMap;
 
-					if (cardsToUnlock.current.length > 0) {
-						for (const card of cardsToUnlock.current) {
-							unlockCard(card);
+					if (preDataPackageItems.current.length > 0) {
+						for (const item of preDataPackageItems.current) {
+							getItem(item);
 						}
 
-						cardsToUnlock.current = [];
+						preDataPackageItems.current = [];
 					}
 				} break;
 
@@ -151,6 +173,7 @@ function App() {
 					setConnectionStatus(ConnectionStatus.Connected);
 					setArchipelagoOptions(packet.slot_data);
 					players.current = packet.players.map(pl => pl.alias);
+					console.log(players.current);
 				} break;
 
 				case "ConnectionRefused": {
@@ -186,6 +209,35 @@ function App() {
 				]
 				*/
 
+				/*
+				[
+					{
+						"text": "1",
+						"type": "player_id"
+					},
+					{
+						"text": " found their "
+					},
+					{
+						"text": "3",
+						"player": 1,
+						"flags": 1,
+						"type": "item_id"
+					},
+					{
+						"text": " ("
+					},
+					{
+						"text": "2",
+						"player": 1,
+						"type": "location_id"
+					},
+					{
+						"text": ")"
+					}
+					]
+				*/
+
 				case "PrintJSON": {
 					let result = "";
 					for (const part of packet.data) {
@@ -195,7 +247,7 @@ function App() {
 							} break;
 
 							case "player_id": {
-								result += players.current[Number(part.text)];
+								result += players.current[Number(part.text) - 1];
 							} break;
 
 							case "item_id": {
@@ -203,7 +255,7 @@ function App() {
 							} break;
 
 							case "location_id": {
-
+								result += locationIdToName.current.get(part.text);
 							} break;
 						}
 					}
@@ -214,8 +266,14 @@ function App() {
 				case "ReceivedItems": {
 					if (Object.keys(dataPackage.current).length > 0) {
 						for (const item of packet.items) {
-							const card = itemIdToName.current.get(String(item.item));
-							if (card !== undefined) {
+							const itemDecoded = itemIdToName.current.get(String(item.item));
+							if (itemDecoded !== undefined) {
+								getItem(itemDecoded);
+							} else {
+								console.error(`Invalid item: ${item.item}`);
+							}
+							
+							/*if (card !== undefined) {
 								unlockCard(card);
 							} else {
 								switch (item.item) {
@@ -231,10 +289,10 @@ function App() {
 										applyTrap(TrapType.FreezeTrap);
 									} break;
 								}
-							}
+							}*/
 						}
 					} else {
-						cardsToUnlock.current = cardsToUnlock.current.concat(packet.items);
+						preDataPackageItems.current = preDataPackageItems.current.concat(packet.items);
 					}
 				} break;
 
@@ -337,11 +395,50 @@ function App() {
 		}
 	}
 
-	function unlockCard(name: string) {
+	/*function unlockCard(name: string) {
 		const id = getCardUidFromItemName(name);
 		const newUnlocked = [...unlockedCards];
 		newUnlocked.push(id);
 		setUnlockedCards(newUnlocked);
+	}*/
+
+	function getItem(item: string) {
+		console.log(`Got item: ${item}`);
+		switch (item) {
+			case "Rainbow Trap": {
+				applyTrap(TrapType.RainbowTrap);
+			} break;
+
+			case "Mirror Trap": {
+				applyTrap(TrapType.MirrorTrap);
+			} break;
+
+			case "Freeze Trap": {
+				applyTrap(TrapType.FreezeTrap);
+			} break;
+
+			default: {
+				const suit = cardSuitStrings.get(item.split(" ")[1])!;
+				addSuitProgression(suit);
+			} break;
+		}
+	}
+
+	function addSuitProgression(suit: Suit) {
+		switch (suit) {
+			case Suit.Hearts:
+				setHeartsProgression(old => old + 1);
+				break;
+			case Suit.Diamonds:
+				setDiamondsProgression(old => old + 1);
+				break;
+			case Suit.Clubs:
+				setClubsProgression(old => old + 1);
+				break;
+			case Suit.Spades:
+				setSpadesProgression(old => old + 1);
+				break;
+		}
 	}
 
 	function drawCard() {
@@ -408,14 +505,14 @@ function App() {
 	}
 
 	function tryAddCardsToFoundation(cards: Card[], index: number): [Card[][], Card[][]] | [null, null] {
-		const cardId = getCardUid(cards[0]);
-		if (unlockedCards.includes(cardId)) {
+		if (suitProgressions[cards[0].suit] >= cards[0].value) {
 			const targetCard: Card | null = gameState.foundations[index][gameState.foundations[index].length - 1] ?? null;
 			const bottomCard = cards[0];
 			if (cards.length === 1 && (targetCard === null && bottomCard.value == 1 || bottomCard.suit === targetCard?.suit && bottomCard.value === targetCard?.value + 1)) {
 				const newFoundations = [...gameState.foundations];
 				newFoundations[index] = newFoundations[index].concat(cards);
 
+				const cardId = getCardUid(cards[0]);
 				const cardName = `${getCardNameFromUid(cardId)} on foundation`;
 				const checks = [dataPackage.current.Solitaire.location_name_to_id[cardName]];
 				if (cards[0].value == 13) {
@@ -570,12 +667,13 @@ function App() {
 		<div id="main-screen">
 			<div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
 				<button onClick={onClickReset}>Reset Game</button>
+				<SuitProgressionDisplay progression={suitProgressions} />
 				<div className="foundations-container">
-					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
-					<Waste cards={gameState.waste} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
-					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />)}
+					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
+					<Waste cards={gameState.waste} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
+					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />)}
 				</div>
-				<Tableau depots={gameState.tableau} dragData={dragData} unlockedCards={unlockedCards} rainbowTrapActive={rainbowTrapActive} />
+				<Tableau depots={gameState.tableau} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
 			</div>
 			<div id="archipelago-info">
 				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} />

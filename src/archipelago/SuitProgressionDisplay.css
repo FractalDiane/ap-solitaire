@@ -1,0 +1,20 @@
+.suit-progression-display {
+	margin-top: 16px;
+	margin-bottom: 32px;
+	display: flex;
+
+	.entry {
+		display: flex;
+
+		.value {
+			margin-left: 4px;
+			margin-right: 16px;
+			margin-top: auto;
+		}
+	}
+}
+
+img {
+	width: 32px;
+	height: 32px;
+}

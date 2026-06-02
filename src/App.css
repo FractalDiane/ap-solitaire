@@ -16,6 +16,16 @@ body {
 	height: 100%;
 }
 
+#game {
+	margin-left: 8px;
+	margin-top: 8px;
+}
+
+#suit-progression-display {
+	margin-left: 16px;
+	margin-bottom: 32px;
+}
+
 #archipelago-info {
 	width: 100%;
 }
