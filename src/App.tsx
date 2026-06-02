@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
-import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getCardUidFromItemName, getRandomTrapType, rectDistanceSquared } from "./utils";
+import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
 import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
@@ -28,7 +28,7 @@ function App() {
 	const itemIdToName = useRef<Map<string, string>>(new Map());
 	const locationIdToName = useRef<Map<string, string>>(new Map());
 	//const cardsToUnlock = useRef<string[]>([]);
-	const preDataPackageItems = useRef<string[]>([]);
+	const preDataPackageItems = useRef<object[]>([]);
 	const archipelagoSeed = useRef("");
 	const archipelagoSlot = useRef("");
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
@@ -78,7 +78,7 @@ function App() {
 			setConnectionStatus(ConnectionStatus.Connecting);
 			archipelagoSlot.current = info.slot;
 
-			console.log(gameState);
+			//console.log(gameState);
 		} else {
 			setConnectionStatus(ConnectionStatus.Disconnecting);
 			websocket.current?.close();
@@ -86,7 +86,7 @@ function App() {
 	}
 
 	function sendCommand(command: object) {
-		console.log(command);
+		//console.log(command);
 		websocket.current?.send(JSON.stringify([command]));
 	}
 
@@ -116,7 +116,8 @@ function App() {
 				case "RoomInfo": {
 					archipelagoSeed.current = packet.seed_name;
 					const localChecksums = JSON.parse(localStorage.getItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
-					console.log(localChecksums);
+					//console.log("local checksums");
+					//console.log(localChecksums);
 					const staleGames = [];
 					for (const [game, checksum] of Object.entries(packet.datapackage_checksums)) {
 						if (localChecksums[game] !== checksum) {
@@ -133,7 +134,8 @@ function App() {
 						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
 					} else {
 						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlot.current}`) ?? "{}");
-						console.log(dataPackage.current);
+						//console.log("current datapackage");
+						//console.log(dataPackage.current);
 						
 						const itemIdToNameMap = new Map<string, string>();
 						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
@@ -163,7 +165,15 @@ function App() {
 
 					if (preDataPackageItems.current.length > 0) {
 						for (const item of preDataPackageItems.current) {
-							getItem(item);
+							//console.log("item in datapackage");
+							//console.log(item);
+
+							const itemDecoded = itemIdToName.current.get(String(item.item));
+							if (itemDecoded !== undefined) {
+								getItem(itemDecoded);
+							} else {
+								console.error(`Invalid item: ${item.toString()}`);
+							}
 						}
 
 						preDataPackageItems.current = [];
@@ -331,7 +341,8 @@ function App() {
 	}
 
 	function getItem(item: string) {
-		console.log(`Got item: ${item}`);
+		//console.log("got item");
+		//console.log(item);
 		switch (item) {
 			case "Rainbow Trap": {
 				applyTrap(TrapType.RainbowTrap);
