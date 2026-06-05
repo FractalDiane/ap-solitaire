@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, Suit, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -24,12 +24,13 @@ function App() {
 	const websocket = useRef<WebSocket | null>(null);
 	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
 	const dataPackage = useRef<DataPackage>({});
-	const players = useRef<string[]>([]);
-	const games = useRef<string[]>([]);
+	//const players = useRef<[string, string][]>([]);
+	const players = useRef<Map<number, PlayerInfo>>(new Map());
+	//const games = useRef<string[]>([]);
 	//const itemIdToName = useRef<Map<string, string>>(new Map());
 	//const locationIdToName = useRef<Map<string, string>>(new Map());
-	const itemIdToName = useRef<Map<string, string>[]>([]);
-	const locationIdToName = useRef<Map<string, string>[]>([]);
+	const itemIdToName = useRef<Map<string, Map<string, string>>>(new Map());
+	const locationIdToName = useRef<Map<string, Map<string, string>>>(new Map());
 	//const cardsToUnlock = useRef<string[]>([]);
 	const preDataPackageItems = useRef<NetworkItem[]>([]);
 	const archipelagoSeed = useRef("");
@@ -117,8 +118,8 @@ function App() {
 			switch (cmd) {
 				case "RoomInfo": {
 					archipelagoSeed.current = packet.seed_name;
-					games.current = packet.games;
-					const localChecksums = JSON.parse(localStorage.getItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
+					//games.current = packet.games;
+					const localChecksums = JSON.parse(localStorage.collectItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
 					const staleGames = [];
 					for (const [game, checksum] of Object.entries(packet.datapackage_checksums)) {
 						if (localChecksums[game] !== checksum) {
@@ -134,7 +135,7 @@ function App() {
 
 						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
 					} else {
-						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlotName.current}`) ?? "{}");
+						dataPackage.current = JSON.parse(localStorage.collectItem(`data_${packet.seed_name}_${archipelagoSlotName.current}`) ?? "{}");
 
 						/*const itemIdToNameMap = new Map<string, string>();
 						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
@@ -168,9 +169,10 @@ function App() {
 
 					if (preDataPackageItems.current.length > 0) {
 						for (const item of preDataPackageItems.current) {
-							const itemDecoded = itemIdToName.current[archipelagoSlot.current - 1].get(String(item.item));
+							//const itemDecoded = itemIdToName.current.get(players.current.get(archipelagoSlot.current)!.game)?.get(String(item.item));
+							const itemDecoded = getItemName(String(item.item), archipelagoSlot.current);
 							if (itemDecoded !== undefined) {
-								getItem(itemDecoded);
+								collectItem(itemDecoded);
 							} else {
 								console.error(`Invalid item: ${item.toString()}`);
 							}
@@ -182,18 +184,16 @@ function App() {
 
 				case "Connected": {
 					archipelagoSlot.current = packet.slot;
+
 					setConnectionStatus(ConnectionStatus.Connected);
 					setArchipelagoOptions(packet.slot_data);
-					const playersArray = [];
-					for (let i = 0; i < packet.players.length; ++i) {
-						playersArray.push("");
+
+					const playersMap = new Map<number, PlayerInfo>();
+					for (const [num, data] of Object.entries(packet.slot_info)) {
+						playersMap.set(Number(num), {name: packet.players[Number(num) - 1].alias, game: data.game})
 					}
 
-					for (const player of packet.players) {
-						playersArray[player.slot - 1] = player.alias;
-					}
-
-					players.current = playersArray;
+					players.current = playersMap;
 
 					if (Object.keys(dataPackage.current).length > 0) {
 						buildIdMappings(dataPackage.current);
@@ -217,15 +217,17 @@ function App() {
 							} break;
 
 							case "player_id": {
-								result += players.current[Number(part.text) - 1];
+								result += players.current.get(Number(part.text));
 							} break;
 
 							case "item_id": {
-								result += itemIdToName.current[part.player - 1].get(part.text);
+								//result += itemIdToName.current[part.player - 1].get(part.text);
+								result += getItemName(part.text, part.player);
 							} break;
 
 							case "location_id": {
-								result += locationIdToName.current[part.player - 1].get(part.text);
+								//result += locationIdToName.current[part.player - 1].get(part.text);
+								result += getLocationName(part.text, part.player);
 							} break;
 						}
 					}
@@ -238,9 +240,10 @@ function App() {
 					console.log(archipelagoSlotName.current)
 					if (Object.keys(dataPackage.current).length > 0) {
 						for (const item of packet.items) {
-							const itemDecoded = itemIdToName.current[archipelagoSlot.current - 1].get(String(item.item));
+							//const itemDecoded = itemIdToName.current[archipelagoSlot.current - 1].get(String(item.item));
+							const itemDecoded = getItemName(String(item.item), archipelagoSlot.current);
 							if (itemDecoded !== undefined) {
-								getItem(itemDecoded);
+								collectItem(itemDecoded);
 							} else {
 								console.error(`Invalid item: ${item.item}`);
 							}
@@ -337,12 +340,12 @@ function App() {
 	}*/
 
 	function buildIdMappings(dataPackage: DataPackage) {
-		const itemIdToNameMap: Map<string, string>[] = [];
-		const locationIdToNameMap: Map<string, string>[]  = [];
+		const itemIdToNameMap: Map<string, Map<string, string>> = new Map();
+		const locationIdToNameMap: Map<string, Map<string, string>> = new Map();
 		console.log(players.current);
-		console.log(games.current);
-		console.log(dataPackage);
-		players.current.forEach((_player, index) => {
+		//console.log(games.current);
+		//console.log(dataPackage);
+		/*players.current.forEach((_player, index) => {
 			const playerItemMap = new Map<string, string>();
 			for (const [name, id] of Object.entries<number>(dataPackage[games.current[index]]["item_name_to_id"])) {
 				playerItemMap.set(String(id), name);
@@ -355,10 +358,35 @@ function App() {
 
 			itemIdToNameMap.push(playerItemMap);
 			locationIdToNameMap.push(playerLocationMap);
+		});*/
+
+		players.current.forEach((player) => {
+			if (!itemIdToNameMap.has(player.game)) {
+				const gameItemMap = new Map<string, string>();
+				for (const [name, id] of Object.entries<number>(dataPackage[player.game]["item_name_to_id"])) {
+					gameItemMap.set(String(id), name);
+				}
+
+				const gameLocationMap = new Map<string, string>();
+				for (const [name, id] of Object.entries<number>(dataPackage[player.game]["location_name_to_id"])) {
+					gameLocationMap.set(String(id), name);
+				}
+
+				itemIdToNameMap.set(player.game, gameItemMap);
+				locationIdToNameMap.set(player.game, gameLocationMap);
+			}
 		});
 
 		itemIdToName.current = itemIdToNameMap;
 		locationIdToName.current = locationIdToNameMap;
+	}
+
+	function getItemName(id: string, player: number): string {
+		return itemIdToName.current.get(players.current.get(player)?.game ?? "")?.get(id) ?? "NULL";
+	}
+
+	function getLocationName(id: string, player: number): string {
+		return locationIdToName.current.get(players.current.get(player)?.game ?? "")?.get(id) ?? "NULL";
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -391,7 +419,7 @@ function App() {
 	}
 
 	function loadGame(): boolean {
-		const saveData = localStorage.getItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`);
+		const saveData = localStorage.collectItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`);
 		if (saveData !== null) {
 			setGameState(JSON.parse(saveData));
 			return true;
@@ -400,7 +428,7 @@ function App() {
 		}
 	}
 
-	function getItem(item: string) {
+	function collectItem(item: string) {
 		switch (item) {
 			case "Rainbow Trap": {
 				applyTrap(TrapType.RainbowTrap);

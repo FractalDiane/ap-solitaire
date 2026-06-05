@@ -260,6 +260,11 @@ export interface NetworkItem {
 	flags: number,
 }
 
+export interface PlayerInfo {
+	name: string,
+	game: string,
+}
+
 export interface DataPackageEntry {
 	item_name_to_id: Record<string, number>,
 	location_name_to_id: Record<string, number>,
