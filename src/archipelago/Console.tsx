@@ -1,7 +1,8 @@
+import { JSX } from "react";
 import "./Console.css";
 
 interface ConsoleProps {
-	messages: string[],
+	messages: JSX.Element[],
 }
 
 export default function Console(props: ConsoleProps) {

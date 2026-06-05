@@ -1,6 +1,7 @@
 #console {
 	font-family: sans-serif;
 	max-height: 500px;
+	user-select: text;
 	overflow-y: scroll;
 
 	.text-player-you {

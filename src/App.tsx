@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { Fragment, JSX, useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
 import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
@@ -37,7 +37,7 @@ function App() {
 	const archipelagoSlot = useRef(-1);
 	const archipelagoSlotName = useRef("");
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
-	const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
+	const [consoleMessages, setConsoleMessages] = useState<JSX.Element[]>([]);
 
 	const [archipelagoOptions, setArchipelagoOptions] = useState<ArchipelagoOptions>({
 		death_link: false,
@@ -66,7 +66,7 @@ function App() {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	function printToConsole(msg: string) {
+	function printToConsole(msg: JSX.Element) {
 		setConsoleMessages(oldConsole => [...oldConsole, msg]);
 	}
 
@@ -209,30 +209,30 @@ function App() {
 				} break;
 
 				case "PrintJSON": {
-					let result = "";
+					const result: JSX.Element[] = [];
 					for (const part of packet.data) {
 						switch (part.type ?? "text") {
 							case "text": {
-								result += part.text;
+								result.push(<span>{part.text}</span>);
 							} break;
 
 							case "player_id": {
-								result += players.current.get(Number(part.text));
+								result.push(<span className={`text-player-${Number(part.text) === archipelagoSlot.current ? "you" : "them"}`}>{players.current.get(Number(part.text))?.name}</span>);
 							} break;
 
 							case "item_id": {
 								//result += itemIdToName.current[part.player - 1].get(part.text);
-								result += getItemName(part.text, part.player);
+								result.push(<span className="text-item-progression">{getItemName(part.text, part.player)}</span>);
 							} break;
 
 							case "location_id": {
 								//result += locationIdToName.current[part.player - 1].get(part.text);
-								result += getLocationName(part.text, part.player);
+								result.push(<span className="text-location">{getLocationName(part.text, part.player)}</span>);
 							} break;
 						}
 					}
 
-					printToConsole(result);
+					printToConsole(<>{result.map((value, index) => <Fragment key={index}>{value}</Fragment>)}</>);
 				} break;
 
 				case "ReceivedItems": {
@@ -315,7 +315,7 @@ function App() {
 
 	function onWebsocketDisconnect(event: CloseEvent) {
 		if (event.code === 1015) {
-			printToConsole(`Couldn't connect to Archipelago server at ${connectInfo.current.address}.`);
+			printToConsole(<span>`Couldn't connect to Archipelago server at ${connectInfo.current.address}.`</span>);
 		}
 
 		setConnectionStatus(ConnectionStatus.Disconnected);
