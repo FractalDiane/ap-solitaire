@@ -251,7 +251,8 @@ function App() {
 				} break;
 
 				case "Bounced": {
-					if (packet.tags?.includes("DeathLink") && archipelagoOptions.death_link) {
+					if (packet.data.source !== archipelagoSlotName.current && packet.tags?.includes("DeathLink") && archipelagoOptions.death_link) {
+						console.log("DEATH LINK RECEIVED");
 						switch (archipelagoOptions.death_link_punishment) {
 							case DeathLinkPunishment.ResetGame: {
 								const newState = generateNewGame();
@@ -260,6 +261,7 @@ function App() {
 							} break;
 
 							case DeathLinkPunishment.RandomTrap: {
+								console.log("test");
 								applyTrap(getRandomTrapType());
 							} break;
 
