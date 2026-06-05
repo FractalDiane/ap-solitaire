@@ -24,30 +24,24 @@ function App() {
 	const websocket = useRef<WebSocket | null>(null);
 	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
 	const dataPackage = useRef<DataPackage>({});
-	//const players = useRef<[string, string][]>([]);
 	const players = useRef<Map<number, PlayerInfo>>(new Map());
-	//const games = useRef<string[]>([]);
-	//const itemIdToName = useRef<Map<string, string>>(new Map());
-	//const locationIdToName = useRef<Map<string, string>>(new Map());
 	const itemIdToName = useRef<Map<string, Map<string, string>>>(new Map());
 	const locationIdToName = useRef<Map<string, Map<string, string>>>(new Map());
-	//const cardsToUnlock = useRef<string[]>([]);
 	const preDataPackageItems = useRef<NetworkItem[]>([]);
 	const archipelagoSeed = useRef("");
 	const archipelagoSlot = useRef(-1);
 	const archipelagoSlotName = useRef("");
-	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
-	const [consoleMessages, setConsoleMessages] = useState<JSX.Element[]>([]);
-
-	const [archipelagoOptions, setArchipelagoOptions] = useState<ArchipelagoOptions>({
+	const archipelagoOptions = useRef<ArchipelagoOptions>({
 		death_link: false,
 		death_link_criteria: 0,
 		death_link_criteria_count: 0,
 		death_link_punishment: 0,
 		trap_fill_percentage: 0,
 	});
-	//const [unlockedCards, setUnlockedCards] = useState<string[]>([]);
-	//const [suitProgressions, setSuitProgressions] = useState<number[]>([0, 0, 0, 0]);
+
+	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
+	const [consoleMessages, setConsoleMessages] = useState<JSX.Element[]>([]);
+
 	const [heartsProgression, setHeartsProgression] = useState(0);
 	const [diamondsProgression, setDiamondsProgression] = useState(0);
 	const [clubsProgression, setClubsProgression] = useState(0);
@@ -118,7 +112,6 @@ function App() {
 			switch (cmd) {
 				case "RoomInfo": {
 					archipelagoSeed.current = packet.seed_name;
-					//games.current = packet.games;
 					const localChecksums = JSON.parse(localStorage.getItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
 					const staleGames = [];
 					for (const [game, checksum] of Object.entries(packet.datapackage_checksums)) {
@@ -136,21 +129,6 @@ function App() {
 						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
 					} else {
 						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlotName.current}`) ?? "{}");
-
-						/*const itemIdToNameMap = new Map<string, string>();
-						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
-							itemIdToNameMap.set(String(id), name);
-						}
-
-						const locationIdToNameMap = new Map<string, string>();
-						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.location_name_to_id)) {
-							locationIdToNameMap.set(String(id), name);
-						}
-
-						itemIdToName.current = itemIdToNameMap;
-						locationIdToName.current = locationIdToNameMap;*/
-
-						//buildIdMappings(dataPackage.current);
 					}
 				} break;
 
@@ -158,18 +136,10 @@ function App() {
 					localStorage.setItem(`data_${archipelagoSeed.current}_${archipelagoSlotName.current}`, JSON.stringify(packet.data.games));
 					dataPackage.current = packet.data.games;
 
-					/*const itemIdToNameMap = new Map<string, string>();
-					for (const [name, id] of Object.entries<number>(packet.data.games.Solitaire.item_name_to_id)) {
-						itemIdToNameMap.set(String(id), name);
-					}
-
-					itemIdToName.current = itemIdToNameMap;*/
-
 					buildIdMappings(packet.data.games);
 
 					if (preDataPackageItems.current.length > 0) {
 						for (const item of preDataPackageItems.current) {
-							//const itemDecoded = itemIdToName.current.get(players.current.get(archipelagoSlot.current)!.game)?.get(String(item.item));
 							const itemDecoded = getItemName(String(item.item), archipelagoSlot.current);
 							if (itemDecoded !== undefined) {
 								collectItem(itemDecoded);
@@ -186,7 +156,7 @@ function App() {
 					archipelagoSlot.current = packet.slot;
 
 					setConnectionStatus(ConnectionStatus.Connected);
-					setArchipelagoOptions(packet.slot_data);
+					archipelagoOptions.current = packet.slot_data;
 
 					const playersMap = new Map<number, PlayerInfo>();
 					for (const [num, data] of Object.entries<{game: string}>(packet.slot_info)) {
@@ -221,12 +191,10 @@ function App() {
 							} break;
 
 							case "item_id": {
-								//result += itemIdToName.current[part.player - 1].get(part.text);
 								result.push(<span className="text-item-progression">{getItemName(part.text, part.player)}</span>);
 							} break;
 
 							case "location_id": {
-								//result += locationIdToName.current[part.player - 1].get(part.text);
 								result.push(<span className="text-location">{getLocationName(part.text, part.player)}</span>);
 							} break;
 						}
@@ -236,11 +204,8 @@ function App() {
 				} break;
 
 				case "ReceivedItems": {
-					console.log(itemIdToName.current);
-					console.log(archipelagoSlotName.current)
 					if (Object.keys(dataPackage.current).length > 0) {
 						for (const item of packet.items) {
-							//const itemDecoded = itemIdToName.current[archipelagoSlot.current - 1].get(String(item.item));
 							const itemDecoded = getItemName(String(item.item), archipelagoSlot.current);
 							if (itemDecoded !== undefined) {
 								collectItem(itemDecoded);
@@ -254,9 +219,8 @@ function App() {
 				} break;
 
 				case "Bounced": {
-					if (packet.data.source !== archipelagoSlotName.current && packet.tags?.includes("DeathLink") && archipelagoOptions.death_link) {
-						console.log("DEATH LINK RECEIVED");
-						switch (archipelagoOptions.death_link_punishment) {
+					if (packet.data.source !== archipelagoSlotName.current && packet.tags?.includes("DeathLink") && archipelagoOptions.current.death_link) {
+						switch (archipelagoOptions.current.death_link_punishment) {
 							case DeathLinkPunishment.ResetGame: {
 								const newState = generateNewGame();
 								setGameState(newState);
@@ -264,7 +228,6 @@ function App() {
 							} break;
 
 							case DeathLinkPunishment.RandomTrap: {
-								console.log("test");
 								applyTrap(getRandomTrapType());
 							} break;
 
@@ -324,41 +287,9 @@ function App() {
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
-	/*function buildIdMappings(dataPackage: DataPackage) {
-		const itemIdToNameMap = new Map<string, string>();
-		for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
-			itemIdToNameMap.set(String(id), name);
-		}
-
-		const locationIdToNameMap = new Map<string, string>();
-		for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.location_name_to_id)) {
-			locationIdToNameMap.set(String(id), name);
-		}
-
-		itemIdToName.current = itemIdToNameMap;
-		locationIdToName.current = locationIdToNameMap;
-	}*/
-
 	function buildIdMappings(dataPackage: DataPackage) {
 		const itemIdToNameMap: Map<string, Map<string, string>> = new Map();
 		const locationIdToNameMap: Map<string, Map<string, string>> = new Map();
-		console.log(players.current);
-		//console.log(games.current);
-		//console.log(dataPackage);
-		/*players.current.forEach((_player, index) => {
-			const playerItemMap = new Map<string, string>();
-			for (const [name, id] of Object.entries<number>(dataPackage[games.current[index]]["item_name_to_id"])) {
-				playerItemMap.set(String(id), name);
-			}
-
-			const playerLocationMap = new Map<string, string>();
-			for (const [name, id] of Object.entries<number>(dataPackage[games.current[index]]["location_name_to_id"])) {
-				playerLocationMap.set(String(id), name);
-			}
-
-			itemIdToNameMap.push(playerItemMap);
-			locationIdToNameMap.push(playerLocationMap);
-		});*/
 
 		players.current.forEach((player) => {
 			if (!itemIdToNameMap.has(player.game)) {
@@ -489,9 +420,9 @@ function App() {
 		newState.stock = cards;
 		setGameState(newState);
 
-		if (archipelagoOptions.death_link && archipelagoOptions.death_link_criteria === DeathLinkCriteria.ExhaustDeck) {
+		if (archipelagoOptions.current.death_link && archipelagoOptions.current.death_link_criteria === DeathLinkCriteria.ExhaustDeck) {
 			const throughCount = throughDeckCount + 1;
-			if (throughCount >= archipelagoOptions.death_link_criteria_count) {
+			if (throughCount >= archipelagoOptions.current.death_link_criteria_count) {
 				sendCommand({
 					cmd: "Bounce",
 					tags: ["DeathLink"],
@@ -653,21 +584,21 @@ function App() {
 	}
 
 	function onClickReset() {
-		const reset = confirm(`Really reset the game?${archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset && gameResetCount + 1 >= archipelagoOptions.death_link_criteria_count ? " This will send a DeathLink." : ""}`);
+		const reset = confirm(`Really reset the game?${archipelagoOptions.current.death_link && archipelagoOptions.current.death_link_criteria === DeathLinkCriteria.GameReset && gameResetCount + 1 >= archipelagoOptions.current.death_link_criteria_count ? " This will send a DeathLink." : ""}`);
 		if (reset) {
 			const newState = generateNewGame();
 			setGameState(newState);
 			saveGame(newState);
 
-			if (archipelagoOptions.death_link && archipelagoOptions.death_link_criteria === DeathLinkCriteria.GameReset) {
+			if (archipelagoOptions.current.death_link && archipelagoOptions.current.death_link_criteria === DeathLinkCriteria.GameReset) {
 				const resetCount = gameResetCount + 1;
-				if (resetCount >= archipelagoOptions.death_link_criteria_count) {
+				if (resetCount >= archipelagoOptions.current.death_link_criteria_count) {
 					sendCommand({
 						cmd: "Bounce",
 						tags: ["DeathLink"],
 						data: {
 							"time": Date.now(),
-							"cause": `${archipelagoSlotName.current} reset their Solitaire game${archipelagoOptions.death_link_criteria_count > 1 ? " too many times" : ""}.`,
+							"cause": `${archipelagoSlotName.current} reset their Solitaire game${archipelagoOptions.current.death_link_criteria_count > 1 ? " too many times" : ""}.`,
 							"source": archipelagoSlotName.current,
 						},
 					});
