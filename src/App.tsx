@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, SlotInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
