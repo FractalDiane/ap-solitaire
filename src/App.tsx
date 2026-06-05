@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, SlotInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -119,7 +119,7 @@ function App() {
 				case "RoomInfo": {
 					archipelagoSeed.current = packet.seed_name;
 					//games.current = packet.games;
-					const localChecksums = JSON.parse(localStorage.collectItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
+					const localChecksums = JSON.parse(localStorage.getItem(`dataChecksums_${packet.seed_name}`) ?? "{}");
 					const staleGames = [];
 					for (const [game, checksum] of Object.entries(packet.datapackage_checksums)) {
 						if (localChecksums[game] !== checksum) {
@@ -135,7 +135,7 @@ function App() {
 
 						localStorage.setItem(`dataChecksums_${packet.seed_name}`, JSON.stringify(packet.datapackage_checksums));
 					} else {
-						dataPackage.current = JSON.parse(localStorage.collectItem(`data_${packet.seed_name}_${archipelagoSlotName.current}`) ?? "{}");
+						dataPackage.current = JSON.parse(localStorage.getItem(`data_${packet.seed_name}_${archipelagoSlotName.current}`) ?? "{}");
 
 						/*const itemIdToNameMap = new Map<string, string>();
 						for (const [name, id] of Object.entries<number>(dataPackage.current.Solitaire.item_name_to_id)) {
@@ -189,7 +189,7 @@ function App() {
 					setArchipelagoOptions(packet.slot_data);
 
 					const playersMap = new Map<number, PlayerInfo>();
-					for (const [num, data] of Object.entries(packet.slot_info)) {
+					for (const [num, data] of Object.entries<{game: string}>(packet.slot_info)) {
 						playersMap.set(Number(num), {name: packet.players[Number(num) - 1].alias, game: data.game})
 					}
 
@@ -419,7 +419,7 @@ function App() {
 	}
 
 	function loadGame(): boolean {
-		const saveData = localStorage.collectItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`);
+		const saveData = localStorage.getItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`);
 		if (saveData !== null) {
 			setGameState(JSON.parse(saveData));
 			return true;
