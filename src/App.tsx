@@ -169,9 +169,7 @@ function App() {
 						buildIdMappings(dataPackage.current);
 					}
 					
-					if (!loadGame()) {
-						generateNewGame();
-					}
+					loadGame();
 				} break;
 
 				case "ConnectionRefused": {
@@ -215,6 +213,15 @@ function App() {
 						}
 					} else {
 						preDataPackageItems.current = preDataPackageItems.current.concat(packet.items);
+					}
+				} break;
+
+				case "Retrieved": {
+					const saveData = packet.keys[`save${archipelagoSlot.current}`];
+					if (saveData !== null && saveData !== undefined && Object.entries(saveData).length > 0) {
+						setGameState(JSON.parse(saveData));
+					} else {
+						setGameState(generateNewGame);
 					}
 				} break;
 
@@ -346,17 +353,22 @@ function App() {
 
 	function saveGame(state: GameState) {
 		const saveData = JSON.stringify(state);
-		localStorage.setItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`, saveData);
+		sendCommand({
+			cmd: "Set",
+			key: `save${archipelagoSlot.current}`,
+			default: "{}",
+			want_reply: false,
+			operations: [
+				{operation: "replace", value: saveData},
+			],
+		});
 	}
 
-	function loadGame(): boolean {
-		const saveData = localStorage.getItem(`save_${archipelagoSeed.current}_${archipelagoSlotName.current}`);
-		if (saveData !== null) {
-			setGameState(JSON.parse(saveData));
-			return true;
-		} else {
-			return false;
-		}
+	function loadGame() {
+		sendCommand({
+			cmd: "Get",
+			keys: [`save${archipelagoSlot.current}`],
+		});
 	}
 
 	function collectItem(item: string) {
