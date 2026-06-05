@@ -227,6 +227,7 @@ function App() {
 
 				case "Bounced": {
 					if (packet.data.source !== archipelagoSlotName.current && packet.tags?.includes("DeathLink") && archipelagoOptions.current.death_link) {
+						printToConsole(<span className="text-deathlink">{packet.data.source} sent a DeathLink. Cause: {packet.data.cause}</span>)
 						switch (archipelagoOptions.current.death_link_punishment) {
 							case DeathLinkPunishment.ResetGame: {
 								const newState = generateNewGame();
@@ -285,7 +286,7 @@ function App() {
 
 	function onWebsocketDisconnect(event: CloseEvent) {
 		if (event.code === 1015) {
-			printToConsole(<span>`Couldn't connect to Archipelago server at ${connectInfo.current.address}.`</span>);
+			printToConsole(<span>Couldn't connect to Archipelago server at {connectInfo.current.address}.</span>);
 		}
 
 		setConnectionStatus(ConnectionStatus.Disconnected);

@@ -19,4 +19,8 @@
 	.text-location {
 		color: #00c51b;
 	}
+
+	.text-deathlink {
+		color: rgb(102, 0, 0);
+	}
 }
