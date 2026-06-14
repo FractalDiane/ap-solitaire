@@ -18,9 +18,8 @@ body {
 }
 
 #game {
-	margin-left: 8px;
-	margin-top: 8px;
-	margin-right: 8px;
+	margin-left: 16px;
+	margin-top: 16px;
 }
 
 @keyframes titleSunrays {
@@ -34,18 +33,13 @@ body {
 
 #title-screen {
 	width: 100%;
-	margin-left: 8px;
-	margin-top: 8px;
-	margin-bottom: 8px;
-	margin-right: 8px;
+	margin: 16px;
 
 	background-color: purple;
-	
-	img {
-		width: 100%;
-		height: 100%;
-		animation: titleSunrays 60s linear infinite;
-	}
+}
+
+#reset-game-button {
+	margin-bottom: 16px;
 }
 
 #suit-progression-display {
@@ -55,8 +49,26 @@ body {
 
 #archipelago-info {
 	width: 100%;
+	margin: 16px;
+	margin-left: 0px;
 }
 
 .foundations-container {
 	display: flex;
+}
+
+.solitaire-button {
+	background-color: #dfb4d7;
+}
+
+.solitaire-button:hover {
+	background-color: #ebd3e6;
+}
+
+.solitaire-button:disabled {
+	background-color: #9f9f9f;
+}
+
+.solitaire-button:focus {
+	background-color: #b470a8;
 }

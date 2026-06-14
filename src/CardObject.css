@@ -6,6 +6,11 @@
 	width: 140px;
 	height: 200px;
 
+	&.display-only {
+		outline: 0px;
+		outline-style: hidden;
+	}
+
 	--image-hearts: url(./assets/heart.svg);
 	--image-diamonds: url(./assets/diamond.svg);
 	--image-clubs: url(./assets/club.svg);
@@ -75,6 +80,11 @@
 		outline: 4px black;
 		outline-style: groove;
 		user-select: none;
+
+		&.display-only {
+			outline: 0px;
+			outline-style: hidden;
+		}
 	}
 
 	img.suit {
@@ -110,11 +120,10 @@
 		left: 0;
 		z-index: 25;
 		border-radius: 8px;
-		outline: 4px black;
-		outline-style: groove;
+		/*outline: 4px black;
+		outline-style: groove;*/
 		width: 100%;
 		height: 100%;
-		/*background-color: blueviolet;*/
 		background-image: url(./assets/cards3/images/back.png);
 		background-size: 100% 100%;
 	}

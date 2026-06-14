@@ -13,8 +13,10 @@ import titleBackground from "./assets/sunray.svg";
 import "./App.css";
 import Console from "./archipelago/Console";
 import SuitProgressionDisplay from "./archipelago/SuitProgressionDisplay";
+import TitleLogo from "./TitleLogo";
 
 function App() {
+	const [hintMode, setHintMode] = useState(false);
 	const [gameState, setGameState] = useState(generateNewGame);
 
 	const [draggedCard, setDraggedCard] = useState("");
@@ -39,6 +41,8 @@ function App() {
 		trap_fill_percentage: 0,
 	});
 
+	const missingLocations = useRef<number[]>([]);
+
 	const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.Disconnected);
 	const [consoleMessages, setConsoleMessages] = useState<JSX.Element[]>([]);
 
@@ -48,8 +52,8 @@ function App() {
 	const [spadesProgression, setSpadesProgression] = useState(0);
 
 	const suitProgressions = useMemo(
-		() => [heartsProgression, diamondsProgression, clubsProgression, spadesProgression],
-		[heartsProgression, diamondsProgression, clubsProgression, spadesProgression],
+		() => hintMode ? [13, 13, 13, 13] : [heartsProgression, diamondsProgression, clubsProgression, spadesProgression],
+		[heartsProgression, diamondsProgression, clubsProgression, spadesProgression, hintMode],
 	);
 
 	const [mirrorTrapActive, setMirrorTrapActive] = useState(false);
@@ -90,7 +94,7 @@ function App() {
 	function onWebsocketConnect() {
 		sendCommand({
 			cmd: "Connect",
-			tags: ["DeathLink"],
+			tags: ["DeathLink", ... hintMode ? ["HintGame"] : []],
 			game: "Solitaire",
 			password: connectInfo.current.password,
 			name: connectInfo.current.slot,
@@ -154,6 +158,7 @@ function App() {
 
 				case "Connected": {
 					archipelagoSlot.current = packet.slot;
+					missingLocations.current = packet.missing_locations;
 
 					setConnectionStatus(ConnectionStatus.Connected);
 					archipelagoOptions.current = packet.slot_data;
@@ -201,6 +206,13 @@ function App() {
 					printToConsole(<>{result.map((value, index) => <Fragment key={index}>{value}</Fragment>)}</>);
 				} break;
 
+				case "RoomUpdate": {
+					const checked = packet.checked_locations ?? [];
+					if (checked.length > 0) {
+						missingLocations.current = missingLocations.current.filter(loc => !checked.includes(loc))
+					}
+				} break;
+
 				case "ReceivedItems": {
 					if (Object.keys(dataPackage.current).length > 0) {
 						for (const item of packet.items) {
@@ -217,7 +229,7 @@ function App() {
 				} break;
 
 				case "Retrieved": {
-					const saveData = packet.keys[`save${archipelagoSlot.current}`];
+					const saveData = packet.keys[`save${archipelagoSlot.current}${hintMode && "hint"}`];
 					if (saveData !== null && saveData !== undefined && Object.entries(saveData).length > 0) {
 						setGameState(JSON.parse(saveData));
 					} else {
@@ -356,7 +368,7 @@ function App() {
 		const saveData = JSON.stringify(state);
 		sendCommand({
 			cmd: "Set",
-			key: `save${archipelagoSlot.current}`,
+			key: `save${archipelagoSlot.current}${hintMode && "hint"}`,
 			default: "{}",
 			want_reply: false,
 			operations: [
@@ -368,8 +380,12 @@ function App() {
 	function loadGame() {
 		sendCommand({
 			cmd: "Get",
-			keys: [`save${archipelagoSlot.current}`],
+			keys: [`save${archipelagoSlot.current}${hintMode && "hint"}`],
 		});
+	}
+
+	function isGameWon(): boolean {
+		return gameState.foundations.every(foundation => foundation.length === 13);
 	}
 
 	function collectItem(item: string) {
@@ -482,17 +498,30 @@ function App() {
 				const newFoundations = [...gameState.foundations];
 				newFoundations[index] = newFoundations[index].concat(cards);
 
-				const cardId = getCardUid(cards[0]);
-				const cardName = `${getCardNameFromUid(cardId)} on foundation`;
-				const checks = [dataPackage.current.Solitaire.location_name_to_id[cardName]];
-				if (cards[0].value == 13) {
-					checks.push(dataPackage.current.Solitaire.location_name_to_id[`${cards[0].suit} Done`]);
-				}
+				if (!hintMode) {
+					const cardId = getCardUid(cards[0]);
+					const cardName = `${getCardNameFromUid(cardId)} on foundation`;
+					const checks = [dataPackage.current.Solitaire.location_name_to_id[cardName]];
+					if (cards[0].value == 13) {
+						checks.push(dataPackage.current.Solitaire.location_name_to_id[`${cards[0].suit} Done`]);
+					}
 
-				sendCommand({
-					cmd: "LocationChecks",
-					locations: checks,
-				});
+					sendCommand({
+						cmd: "LocationChecks",
+						locations: checks,
+					});
+				} else if (isGameWon()) {
+					sendCommand({
+						cmd: "CreateHints",
+						locations: missingLocations.current.length > 0
+									? [missingLocations.current[Math.floor(Math.random() * missingLocations.current.length)]]
+									: [],
+					});
+
+					const newState = generateNewGame();
+					setGameState(newState);
+					saveGame(newState);
+				}
 
 				return [gameState.tableau, newFoundations];
 			}
@@ -642,17 +671,17 @@ function App() {
 		}}>
 		<div id="main-screen">
 			{connectionStatus === ConnectionStatus.Connected ? <div id="game" style={{transform: mirrorTrapActive ? "scaleY(-1)" : "none"}}>
-				<button onClick={onClickReset}>Reset Game</button>
-				<SuitProgressionDisplay progression={suitProgressions} />
+				<button className="solitaire-button" id="reset-game-button" onClick={onClickReset}>Reset Game</button>
+				{!hintMode && <SuitProgressionDisplay progression={suitProgressions} />}
 				<div className="foundations-container">
 					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
 					<Waste cards={gameState.waste} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
 					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />)}
 				</div>
 				<Tableau depots={gameState.tableau} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
-			</div> : <div id="title-screen">{false && <img src={titleBackground} />}</div>}
+			</div> : <div id="title-screen"><TitleLogo /></div>}
 			<div id="archipelago-info">
-				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} />
+				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} onHintModeChange={setHintMode} />
 				<Console messages={consoleMessages} />
 			</div>
 		</div>

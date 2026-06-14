@@ -18,6 +18,8 @@ interface CardObjectProps {
 	rainbowTrapActive: boolean,
 
 	dragData: DragData,
+
+	displayOnly?: boolean,
 }
 
 export default function CardObject(props: CardObjectProps) {
@@ -36,13 +38,13 @@ export default function CardObject(props: CardObjectProps) {
 				position: "relative",
 				zIndex: props.stackIndex + 100 + (isBeingDragged ? 1000 : 0),
 				transform: isBeingDragged ? `translateX(${props.dragData.dragOffset.x - props.dragData.dragStartPos.x}px) translateY(${props.dragData.dragOffset.y - props.dragData.dragStartPos.y}px)` : "none",
-			}} className={`card-object ${props.staggered ? "staggered" : ""} ${Suit[props.card.suit].toLowerCase()}`}
+			}} className={`card-object ${props.staggered ? "staggered" : ""} ${props.displayOnly ? "display-only" : ""} ${Suit[props.card.suit].toLowerCase()}`}
 			onMouseDown={(e) => {
-				if (props.card.isFaceUp || props.location === CardLocation.Stock) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
+				if (!props.displayOnly && (props.card.isFaceUp || props.location === CardLocation.Stock)) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 		onMouseUp={(e) => {if (isBeingDragged) props.dragData.onMouseUp({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 			>
 			<>
-				<img className="card" src={cardImages.get(id) ?? undefined} draggable={false} style={{
+				<img className={`card ${props.displayOnly ? "display-only" : ""}`} src={cardImages.get(id) ?? undefined} draggable={false} style={{
 					filter: props.rainbowTrapActive ? `hue-rotate(${getRandomHueShift(id)}deg)` : "none",
 				}} />
 				<div className={`text ${isRed ? "red" : ""}`}>{cardValues[props.card.value]}</div>
