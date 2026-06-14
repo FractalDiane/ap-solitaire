@@ -1,0 +1,7 @@
+.title-card {
+	margin-left: auto;
+	margin-right: auto;
+	width: 140px;
+	height: 200px;
+	animation: titleCard 4s ease-in-out infinite;
+}
