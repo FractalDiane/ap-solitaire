@@ -8,8 +8,6 @@ import Waste from "./piles/Waste";
 import Stock from "./piles/Stock";
 import ConnectPanel from "./archipelago/ConnectPanel";
 
-import titleBackground from "./assets/sunray.svg";
-
 import "./App.css";
 import Console from "./archipelago/Console";
 import SuitProgressionDisplay from "./archipelago/SuitProgressionDisplay";
