@@ -19,7 +19,12 @@
 	margin-top: 25%;
 }
 
-#title-card {
+#title-cards {
+	display: flex;
+	flex-direction: row;
+}
+
+.title-card {
 	margin-left: auto;
 	margin-right: auto;
 	width: 140px;
