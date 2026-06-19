@@ -1,7 +1,7 @@
 import { Fragment, JSX, useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
 import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
-import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DeathLinkPunishment, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
+import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
 import Waste from "./piles/Waste";
@@ -35,7 +35,6 @@ function App() {
 		death_link: false,
 		death_link_criteria: 0,
 		death_link_criteria_count: 0,
-		death_link_punishment: 0,
 		trap_fill_percentage: 0,
 	});
 
@@ -237,49 +236,10 @@ function App() {
 
 				case "Bounced": {
 					if (packet.data.source !== archipelagoSlotName.current && packet.tags?.includes("DeathLink") && archipelagoOptions.current.death_link) {
-						printToConsole(<span className="text-deathlink">{packet.data.source} sent a DeathLink. Cause: {packet.data.cause}</span>)
-						switch (archipelagoOptions.current.death_link_punishment) {
-							case DeathLinkPunishment.ResetGame: {
-								const newState = generateNewGame();
-								setGameState(newState);
-								saveGame(newState);
-							} break;
-
-							case DeathLinkPunishment.RandomTrap: {
-								applyTrap(getRandomTrapType());
-							} break;
-
-							case DeathLinkPunishment.Defoundation: {
-								const newGameState = {...gameState};
-								for (const foundation of newGameState.foundations) {
-									const card = foundation.pop();
-									if (card !== undefined) {
-										newGameState.stock.splice(0, 0, card);
-									}
-								}
-
-								setGameState(newGameState);
-								saveGame(newGameState);
-							} break;
-
-							case DeathLinkPunishment.Blackout: {
-								const newGameState = {...gameState};
-								for (const depot of newGameState.tableau) {
-									for (let i = 0; i < depot.length - 1; ++i) {
-										depot[i].isFaceUp = false;
-									}
-								}
-
-								setGameState(newGameState);
-								saveGame(newGameState);
-							} break;
-
-							case DeathLinkPunishment.Freeze: {
-
-							} break;
-
-							default: break;
-						}
+						printToConsole(<span className="text-deathlink">{packet.data.source} sent a DeathLink. Cause: {packet.data.cause || "Unspecified"}</span>)
+						const newState = generateNewGame();
+						setGameState(newState);
+						saveGame(newState);
 					}
 				} break;
 				

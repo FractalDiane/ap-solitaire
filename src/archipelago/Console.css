@@ -5,19 +5,19 @@
 	overflow-y: scroll;
 
 	.text-player-you {
-		color: #ff87d7;
+		color: #84105d;
 	}
 
 	.text-player-them {
-		color: #5fafff;
+		color: #0e5397;
 	}
 
 	.text-item-progression {
-		color: #ffc500;
+		color: #8a6a00;
 	}
 
 	.text-location {
-		color: #00c51b;
+		color: #00670e;
 	}
 
 	.text-deathlink {

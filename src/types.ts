@@ -222,7 +222,6 @@ export interface ArchipelagoOptions {
 	death_link: boolean,
 	death_link_criteria: number,
 	death_link_criteria_count: number,
-	death_link_punishment: number,
 	trap_fill_percentage: number,
 }
 
@@ -236,15 +235,6 @@ export enum ConnectionStatus {
 export enum DeathLinkCriteria {
 	GameReset,
 	ExhaustDeck,
-}
-
-export enum DeathLinkPunishment {
-	None,
-	RandomTrap,
-	Freeze,
-	Defoundation,
-	Blackout,
-	ResetGame,
 }
 
 export enum TrapType {
