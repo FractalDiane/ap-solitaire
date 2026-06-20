@@ -1,6 +1,6 @@
 import { Fragment, JSX, useMemo, useRef, useState } from "react";
 import {v4 as uuidv4} from "uuid";
-import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, getRandomTrapType, rectDistanceSquared } from "./utils";
+import { buildCardDeck, doRectsOverlap, getCardNameFromUid, getCardUid, rectDistanceSquared } from "./utils";
 import { ArchipelagoOptions, Card, CardLocation, cardSuitStrings, ConnectionInfo, ConnectionStatus, DataPackage, DeathLinkCriteria, DragData, DropZone, GameState, NetworkItem, PlayerInfo, Suit, SuitColors, TrapType, Vector2 } from "./types";
 import Tableau from "./piles/Tableau";
 import Foundation from "./piles/Foundation";
