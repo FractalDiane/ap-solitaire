@@ -216,6 +216,7 @@ export interface ConnectionInfo {
 	address: string,
 	slot: string,
 	password: string,
+	hintMode: boolean,
 }
 
 export interface ArchipelagoOptions {

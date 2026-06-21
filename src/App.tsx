@@ -11,7 +11,7 @@ import ConnectPanel from "./archipelago/ConnectPanel";
 import "./App.css";
 import Console from "./archipelago/Console";
 import SuitProgressionDisplay from "./archipelago/SuitProgressionDisplay";
-import TitleLogo from "./TitleLogo";
+import TitleLogo from "./title_screen/TitleLogo";
 
 function App() {
 	const [hintMode, setHintMode] = useState(false);
@@ -22,7 +22,7 @@ function App() {
 	const [draggedCardStartPos, setDraggedCardStartPos] = useState<Vector2>({x: 0, y: 0});
 
 	const websocket = useRef<WebSocket | null>(null);
-	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: ""});
+	const connectInfo = useRef<ConnectionInfo>({address: "", slot: "", password: "", hintMode: false});
 	const dataPackage = useRef<DataPackage>({});
 	const players = useRef<Map<number, PlayerInfo>>(new Map());
 	const itemIdToName = useRef<Map<string, Map<string, string>>>(new Map());

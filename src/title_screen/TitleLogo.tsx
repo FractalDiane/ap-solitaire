@@ -1,4 +1,4 @@
-import TitleCard from "./title_screen/TitleCard";
+import TitleCard from "./TitleCard";
 
 import "./TitleLogo.css";
 
