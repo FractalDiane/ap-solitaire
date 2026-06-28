@@ -12,5 +12,9 @@ export default function TitleLogo() {
 			<TitleCard index={4} startFaceUp={true} />
 		</div>
 		<div id="title-text">AP SOLITAIRE</div>
+		<div id="title-credits">
+			<span style={{marginRight: "128px"}}>By Diane Sparks</span>
+			<span>Card art by Tangent</span>
+		</div>
 	</div>;
 }

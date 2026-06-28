@@ -4,6 +4,10 @@
 	margin-bottom: 48px;
 
 	flex-grow: 2;
+
+	input, select {
+		margin-bottom: 8px;
+	}
 }
 
 #connect-panel-parent {
