@@ -16,6 +16,7 @@ interface CardObjectProps {
 
 	suitProgressions: number[],
 	rainbowTrapActive: boolean,
+	mirrorTrapActive: boolean,
 
 	dragData: DragData,
 
@@ -25,7 +26,6 @@ interface CardObjectProps {
 export default function CardObject(props: CardObjectProps) {
 	const id = useMemo(() => getCardUid(props.card), [props.card]);
 	const isRed = useMemo(() => props.card.suit == Suit.Hearts || props.card.suit == Suit.Diamonds, [props.card]);
-	//const isUnlocked = useMemo(() => props.unlockedCards.includes(id), [id, props.unlockedCards]);
 	const isUnlocked = useMemo(() => props.suitProgressions[props.card.suit] >= props.card.value, [props.card, props.suitProgressions]);
 	const isBeingDragged = useMemo(
 		() => props.dragData.draggedCard === id || props.allCardsInStack.slice(0, props.stackIndex).some(card => props.dragData.draggedCard === getCardUid(card)),
@@ -40,7 +40,7 @@ export default function CardObject(props: CardObjectProps) {
 				transform: isBeingDragged ? `translateX(${props.dragData.dragOffset.x - props.dragData.dragStartPos.x}px) translateY(${props.dragData.dragOffset.y - props.dragData.dragStartPos.y}px)` : "none",
 			}} className={`card-object ${props.staggered ? "staggered" : ""} ${props.displayOnly ? "display-only" : ""} ${Suit[props.card.suit].toLowerCase()}`}
 			onMouseDown={(e) => {
-				if (!props.displayOnly && (props.card.isFaceUp || props.location === CardLocation.Stock)) props.dragData.onMouseDown({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
+				if (!props.displayOnly && (props.card.isFaceUp || props.location === CardLocation.Stock)) props.dragData.onMouseDown({x: e.clientX, y: props.mirrorTrapActive ? window.innerHeight - e.clientY : e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 		onMouseUp={(e) => {if (isBeingDragged) props.dragData.onMouseUp({x: e.clientX, y: e.clientY}, ref.current?.getBoundingClientRect() ?? new DOMRect(), id, props.allCardsInStack.slice(props.stackIndex), props.location, props.indexInLocation, props.stackIndex)}}
 			>
 			<>

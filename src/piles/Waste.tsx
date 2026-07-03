@@ -11,6 +11,7 @@ interface WasteProps {
 
 	suitProgressions: number[],
 	rainbowTrapActive: boolean,
+	mirrorTrapActive: boolean,
 }
 
 export default function Waste(props: WasteProps) {
@@ -19,7 +20,7 @@ export default function Waste(props: WasteProps) {
 			location={CardLocation.Waste} indexInLocation={0}
 			dragData={props.dragData} suitProgressions={props.suitProgressions}
 			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1}
-			rainbowTrapActive={props.rainbowTrapActive}
+			rainbowTrapActive={props.rainbowTrapActive} mirrorTrapActive={props.mirrorTrapActive}
 		/>)}
 	</div>;
 }

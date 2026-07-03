@@ -632,11 +632,11 @@ function App() {
 				<button className="solitaire-button" id="reset-game-button" onClick={onClickReset}>Reset Game</button>
 				{!hintMode && <SuitProgressionDisplay progression={suitProgressions} />}
 				<div className="foundations-container">
-					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
-					<Waste cards={gameState.waste} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
+					<Stock cards={gameState.stock} dragData={dragData} onClickCard={drawCard} onClickEmpty={resetStock} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} mirrorTrapActive={mirrorTrapActive} />
+					<Waste cards={gameState.waste} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} mirrorTrapActive={mirrorTrapActive} />
 					{gameState.foundations.map((foundation, index) => <Foundation key={index} index={index} cards={foundation} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />)}
 				</div>
-				<Tableau depots={gameState.tableau} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} />
+				<Tableau depots={gameState.tableau} dragData={dragData} suitProgressions={suitProgressions} rainbowTrapActive={rainbowTrapActive} mirrorTrapActive={mirrorTrapActive} />
 			</div> : <div id="title-screen"><TitleLogo /></div>}
 			<div id="archipelago-info">
 				<ConnectPanel connectionStatus={connectionStatus} onClickConnect={onClickConnect} onHintModeChange={setHintMode} />

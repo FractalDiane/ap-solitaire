@@ -10,10 +10,11 @@ interface TableauProps {
 
 	suitProgressions: number[],
 	rainbowTrapActive: boolean,
+	mirrorTrapActive: boolean,
 }
 
 export default function Tableau(props: TableauProps) {
 	return <div className="tableau">
-		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} suitProgressions={props.suitProgressions} rainbowTrapActive={props.rainbowTrapActive} />)}
+		{props.depots.map((depot, index) => <Depot key={index} cards={depot} index={index} dragData={props.dragData} suitProgressions={props.suitProgressions} rainbowTrapActive={props.rainbowTrapActive} mirrorTrapActive={props.mirrorTrapActive} />)}
 	</div>;
 }

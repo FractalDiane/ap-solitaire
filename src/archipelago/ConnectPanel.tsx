@@ -78,6 +78,7 @@ export default function ConnectPanel(props: ConnectPanelProps) {
 				props.onClickConnect(props.connectionStatus === ConnectionStatus.Connected, connectionInfo);
 				localStorage.setItem("connection_info", JSON.stringify(connectionInfo));
 			}}>{getButtonName()}</button>
+			<a id="download-button" href="solitaire.apworld" download>Download APWorld</a>
 		</form>
 	</div>;
 }

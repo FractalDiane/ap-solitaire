@@ -13,3 +13,8 @@
 #connect-panel-parent {
 	display: flex;
 }
+
+#download-button {
+	margin-top: 8px;
+	text-align: center;
+}

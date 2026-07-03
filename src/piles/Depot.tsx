@@ -13,13 +13,14 @@ interface DepotProps {
 
 	suitProgressions: number[],
 	rainbowTrapActive: boolean,
+	mirrorTrapActive: boolean,
 }
 
 export default function Depot(props: DepotProps) {
 	return <div className="depot drop-zone" drop-location={CardLocation.Depot} drop-index={props.index}>
 		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 		location={CardLocation.Depot} indexInLocation={props.index} suitProgressions={props.suitProgressions}
-		dragData={props.dragData} rainbowTrapActive={props.rainbowTrapActive}
+		dragData={props.dragData} rainbowTrapActive={props.rainbowTrapActive} mirrorTrapActive={props.mirrorTrapActive}
 		staggered={true} stackIndex={index} isTopInStack={index === props.cards.length - 1} />)}
 	</div>;
 }

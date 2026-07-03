@@ -13,6 +13,7 @@ interface StockProps {
 
 	suitProgressions: number[],
 	rainbowTrapActive: boolean,
+	mirrorTrapActive: boolean,
 }
 
 export default function Stock(props: StockProps) {
@@ -25,7 +26,7 @@ export default function Stock(props: StockProps) {
 		{props.cards.map((card, index) => <CardObject key={getCardUid(card)} card={card} allCardsInStack={props.cards}
 			location={CardLocation.Stock} indexInLocation={0} dragData={dragData} suitProgressions={props.suitProgressions}
 			staggered={false} stackIndex={index} isTopInStack={index === props.cards.length - 1}
-			rainbowTrapActive={props.rainbowTrapActive}
+			rainbowTrapActive={props.rainbowTrapActive} mirrorTrapActive={props.mirrorTrapActive}
 		/>)}
 	</div>;
 }
