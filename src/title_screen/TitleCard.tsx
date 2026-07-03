@@ -43,7 +43,7 @@ export default function TitleCard(props: TitleCardProps) {
 		<CardObject displayOnly={true} card={card} staggered={false}
 		stackIndex={0} isTopInStack={true} allCardsInStack={[card]}
 		suitProgressions={[13, 13, 13, 13]} indexInLocation={0} location={CardLocation.Foundation}
-		rainbowTrapActive={false}
+		rainbowTrapActive={false} mirrorTrapActive={false}
 		dragData={{
 			draggedCard: "",
 			dragOffset: {x: 0, y: 0},
